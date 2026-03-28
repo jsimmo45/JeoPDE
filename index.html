@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JeoPDE!</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Libre+Franklin:wght@400;500;600;700&family=Corben:wght@700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<style>
+:root{--board-blue:#060CE9;--deep-blue:#0a0a3a;--panel-blue:#12126b;--gold:#D7A643;--bright-gold:#FFD700;--correct:#27ae60;--wrong:#c0392b;--timeout-amber:#d4a017;--white:#fff;--cell-hover:#1a1aff}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Libre Franklin',sans-serif;background:var(--deep-blue);min-height:100vh;color:var(--white);overflow-x:hidden}
+.header{background:linear-gradient(180deg,#0d0d4d,var(--deep-blue));text-align:center;padding:1.2rem 1rem .8rem;border-bottom:3px solid var(--gold);position:relative}
+.header-title{font-family:'Corben',cursive;font-size:3.2rem;color:var(--bright-gold);text-shadow:0 0 30px rgba(215,166,67,.4),2px 3px 0 #1a1a4e;letter-spacing:6px;line-height:1}
+.header-sub{font-family:'Oswald',sans-serif;font-size:.95rem;color:rgba(255,255,255,.6);letter-spacing:3px;text-transform:uppercase;margin-top:.2rem}
+.header-dna{font-size:1.4rem;margin-top:.3rem;opacity:.8}
+.header-controls{position:absolute;top:1rem;right:1.2rem;display:flex;gap:.6rem;align-items:center}
+.icon-btn{background:none;border:2px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);font-size:1.3rem;width:40px;height:40px;border-radius:50%;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center}
+.icon-btn:hover{border-color:var(--gold);color:var(--gold)}.icon-btn.muted{opacity:.4}
+.text-btn{background:none;border:2px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);font-family:'Oswald',sans-serif;font-size:.75rem;padding:.4rem .7rem;border-radius:6px;cursor:pointer;text-transform:uppercase;letter-spacing:1px;transition:all .15s}
+.text-btn:hover{border-color:var(--gold);color:var(--gold)}
+.timer-strip{display:none;width:100%;background:rgba(0,0,0,.35);border-radius:30px;padding:5px 10px;border:2px solid var(--gold);align-items:center;gap:10px;margin-bottom:1rem}
+.timer-strip.active{display:flex}
+.timer-track{flex:1;height:16px;background:rgba(0,0,0,.3);border-radius:12px;overflow:hidden}
+.timer-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--bright-gold));border-radius:12px;transition:width .15s linear;width:100%}
+.timer-fill.danger{background:linear-gradient(90deg,#c0392b,#e74c3c)}
+.timer-label{font-family:'Oswald',sans-serif;font-size:1.1rem;font-weight:600;color:var(--bright-gold);min-width:36px;text-align:center}
+.container{max-width:1100px;margin:0 auto;padding:1rem}
+.setup-card{background:var(--panel-blue);border:2px solid var(--gold);border-radius:12px;padding:2.5rem;max-width:480px;margin:2.5rem auto;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.setup-card h2{font-family:'Oswald',sans-serif;font-size:1.8rem;color:var(--bright-gold);margin-bottom:1.2rem}
+.setup-card p{font-size:1rem;opacity:.8;margin-bottom:1rem}
+.player-btns{display:flex;gap:.8rem;justify-content:center;margin-bottom:1rem}
+.btn{font-family:'Oswald',sans-serif;font-weight:600;border:none;border-radius:6px;cursor:pointer;transition:all .15s;text-transform:uppercase;letter-spacing:1px}
+.btn:hover{transform:translateY(-1px)}
+.btn-blue{background:var(--board-blue);color:var(--white);padding:.65rem 1.5rem;font-size:1rem;border:2px solid rgba(255,255,255,.15)}
+.btn-blue:hover{background:var(--cell-hover)}.btn-blue.selected{border-color:var(--bright-gold);box-shadow:0 0 12px rgba(215,166,67,.4)}
+.btn-gold{background:linear-gradient(135deg,var(--gold),#c4922e);color:var(--deep-blue);padding:.8rem 2rem;font-size:1.15rem}
+.btn-gold:hover{background:linear-gradient(135deg,var(--bright-gold),var(--gold))}
+.btn-sm{font-size:.85rem;padding:.4rem 1rem;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.15)}
+.btn-sm:hover{background:rgba(255,255,255,.15);color:var(--white)}
+.btn-danger{font-size:.8rem;padding:.3rem .7rem;background:rgba(192,57,43,.2);color:#e74c3c;border:1px solid rgba(192,57,43,.4);font-family:'Libre Franklin',sans-serif;font-weight:600;cursor:pointer;border-radius:4px;transition:all .15s}
+.btn-danger:hover{background:rgba(192,57,43,.4)}
+.name-input{display:block;width:75%;margin:.6rem auto;padding:.65rem;font-size:1.05rem;font-family:'Libre Franklin',sans-serif;border:2px solid rgba(215,166,67,.3);border-radius:6px;background:rgba(0,0,0,.3);color:var(--white);text-align:center}
+.name-input::placeholder{color:rgba(255,255,255,.35)}.name-input:focus{outline:none;border-color:var(--gold)}
+.scoreboard{display:none;justify-content:center;gap:1.5rem;margin-bottom:.6rem;flex-wrap:wrap}
+.score-card{background:var(--panel-blue);padding:.7rem 1.8rem;border-radius:8px;text-align:center;border:2px solid transparent;transition:all .25s;min-width:150px}
+.score-card.active{border-color:var(--bright-gold);box-shadow:0 0 18px rgba(215,166,67,.3)}
+.score-name{font-family:'Oswald',sans-serif;font-size:1rem;color:rgba(255,255,255,.8)}
+.score-val{font-family:'Oswald',sans-serif;font-size:1.8rem;font-weight:700;color:var(--bright-gold)}
+.round-bar{display:none;align-items:center;justify-content:center;gap:1.2rem;margin-bottom:.8rem}
+.round-label{font-family:'Oswald',sans-serif;font-size:1.5rem;color:var(--white);text-shadow:1px 1px 3px rgba(0,0,0,.5)}
+.round-label span{color:var(--bright-gold)}
+.board{display:none;gap:4px;border-radius:8px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.4);border:3px solid #1a1a6e;background:#000}
+.cat-head{background:var(--board-blue);padding:.85rem .4rem;text-align:center;font-family:'Oswald',sans-serif;font-weight:600;font-size:.85rem;text-transform:uppercase;letter-spacing:.5px;color:var(--white);text-shadow:1px 2px 3px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;min-height:64px;line-height:1.2}
+.cell{background:var(--board-blue);display:flex;align-items:center;justify-content:center;padding:1rem .3rem;cursor:pointer;transition:all .12s;min-height:60px}
+.cell:hover{background:var(--cell-hover);transform:scale(1.04);z-index:2}
+.cell-val{font-family:'Corben',cursive;font-size:1.6rem;color:var(--gold);text-shadow:1px 2px 3px rgba(0,0,0,.6)}
+.cell.done{background:#0a0a2e;cursor:default}.cell.done:hover{transform:none;background:#0a0a2e}.cell.done .cell-val{visibility:hidden}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:100;overflow-y:auto;backdrop-filter:blur(3px)}
+.modal{background:var(--panel-blue);width:92%;max-width:640px;margin:4vh auto;border-radius:14px;border:2px solid var(--gold);box-shadow:0 10px 50px rgba(0,0,0,.5);padding:2rem;position:relative}
+.modal-value{font-family:'Corben',cursive;font-size:1.8rem;color:var(--gold)}
+.dd-badge{display:none;font-family:'Oswald',sans-serif;font-size:1.1rem;font-weight:600;color:var(--deep-blue);background:var(--bright-gold);padding:.3rem 1rem;border-radius:20px;animation:pop .8s ease-in-out infinite alternate}
+@keyframes pop{from{transform:scale(1)}to{transform:scale(1.06)}}
+.modal-q{font-size:1.3rem;line-height:1.6;margin:1.2rem 0;color:var(--white)}
+.choices{display:flex;flex-direction:column;gap:.6rem}
+.choice{display:block;width:100%;padding:.85rem 1rem;font-family:'Libre Franklin',sans-serif;font-size:1.05rem;text-align:left;background:rgba(255,255,255,.06);color:var(--white);border:2px solid rgba(255,255,255,.12);border-radius:8px;cursor:pointer;transition:all .15s}
+.choice:hover{background:rgba(255,255,255,.12);border-color:rgba(215,166,67,.4)}
+.choice.picked{background:rgba(215,166,67,.15);border-color:var(--gold)}
+.choice.right{background:rgba(39,174,96,.2);border-color:var(--correct)}
+.choice.wrong-pick{background:rgba(192,57,43,.2);border-color:var(--wrong)}
+.choice[disabled]{cursor:default;opacity:.85}
+.feedback-box{display:none;padding:1rem;border-radius:8px;font-family:'Oswald',sans-serif;font-size:1.3rem;text-align:center;margin-top:1rem}
+.feedback-box.fb-correct{background:rgba(39,174,96,.2);border:2px solid var(--correct);color:#2ecc71}
+.feedback-box.fb-wrong{background:rgba(192,57,43,.2);border:2px solid var(--wrong);color:#e74c3c}
+.feedback-box.fb-time{background:rgba(212,160,23,.2);border:2px solid var(--timeout-amber);color:#f1c40f}
+.explain-box{display:none;background:rgba(0,0,0,.25);border-left:4px solid var(--gold);padding:.85rem 1rem;margin-top:.8rem;border-radius:0 8px 8px 0;font-size:.95rem;line-height:1.5;color:rgba(255,255,255,.85)}
+.wager-area{display:none;text-align:center;margin:1.5rem 0}
+.wager-field{font-family:'Oswald',sans-serif;font-size:2rem;width:180px;text-align:center;padding:.5rem;border:3px solid var(--gold);border-radius:8px;background:rgba(0,0,0,.3);color:var(--bright-gold)}
+.wager-hint{font-size:.9rem;color:rgba(255,255,255,.5);margin-top:.5rem}
+/* Buzz-in */
+.buzz-area{display:none;text-align:center;margin:1.5rem 0}
+.buzz-status{font-family:'Oswald',sans-serif;font-size:1.4rem;color:var(--bright-gold);margin-bottom:.5rem}
+.buzz-countdown{font-family:'Corben',cursive;font-size:2.5rem;color:var(--bright-gold);margin:.5rem 0}
+.buzz-btns{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:.8rem}
+.buzz-btn{font-family:'Oswald',sans-serif;font-size:1.4rem;padding:1.2rem 2.5rem;background:rgba(255,215,0,.08);border:3px solid rgba(255,215,0,.3);color:rgba(255,255,255,.4);border-radius:12px;cursor:default;transition:all .15s;min-width:160px;-webkit-tap-highlight-color:transparent;user-select:none;touch-action:manipulation}
+.buzz-btn.live{background:rgba(255,215,0,.12);border-color:var(--gold);color:var(--bright-gold);cursor:pointer;animation:buzzpulse 1s ease-in-out infinite}
+.buzz-btn.live:hover{background:rgba(255,215,0,.25);transform:scale(1.05)}
+.buzz-btn.live:active{transform:scale(.92);background:rgba(255,215,0,.35)}
+@keyframes buzzpulse{0%,100%{box-shadow:0 0 0 0 rgba(255,215,0,.3)}50%{box-shadow:0 0 20px 4px rgba(255,215,0,.2)}}
+.buzz-key{display:block;font-size:.8rem;opacity:.5;margin-top:.3rem;font-family:'Libre Franklin',sans-serif}
+.buzz-miss{font-family:'Oswald',sans-serif;font-size:1.2rem;color:var(--timeout-amber);margin-top:.8rem}
+/* Final */
+.final-banner{text-align:center;background:linear-gradient(135deg,var(--deep-blue),#2d0a4e);padding:1.5rem;border-radius:10px;margin-bottom:1.5rem;border:2px solid var(--gold)}
+.final-banner h1{font-family:'Corben',cursive;font-size:2rem;color:var(--bright-gold)}
+.final-banner h2{font-family:'Oswald',sans-serif;font-size:1.2rem;color:rgba(255,255,255,.7);margin-top:.3rem}
+.winner-box{text-align:center;padding:1.5rem;margin:1.5rem 0;background:linear-gradient(135deg,var(--gold),#c4922e);border-radius:10px}
+.winner-box h1{font-family:'Corben',cursive;font-size:1.8rem;color:var(--deep-blue)}
+.hs-list{list-style:none;margin:1rem 0}
+.hs-entry{display:flex;align-items:center;padding:.5rem .8rem;font-family:'Oswald',sans-serif;font-size:1.05rem;border-bottom:1px solid rgba(255,255,255,.08);gap:.5rem}
+.hs-entry:nth-child(1) .hs-rank{color:var(--bright-gold)}.hs-entry:nth-child(2) .hs-rank{color:#C0C0C0}.hs-entry:nth-child(3) .hs-rank{color:#CD7F32}
+.hs-rank{min-width:28px}.hs-name{flex:1}.hs-score{color:var(--bright-gold);min-width:80px;text-align:right}.hs-date{font-size:.8rem;color:rgba(255,255,255,.3);min-width:70px;text-align:right}
+.hs-del{opacity:0;transition:opacity .15s}.hs-entry:hover .hs-del{opacity:1}
+.admin-bar{display:none;margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,.1);text-align:center}.admin-bar.show{display:block}
+.splash{display:none;position:fixed;inset:0;z-index:200;background:var(--deep-blue);justify-content:center;align-items:center;flex-direction:column}
+.splash h1{font-family:'Corben',cursive;font-size:3rem;color:var(--bright-gold);text-shadow:0 0 40px rgba(215,166,67,.5)}
+.splash p{font-family:'Oswald',sans-serif;font-size:1.3rem;color:rgba(255,255,255,.6);margin-top:.5rem}
+.footer{text-align:center;padding:1.5rem 1rem;font-size:.8rem;color:rgba(255,255,255,.3);line-height:1.6}
+@media(max-width:700px){.header-title{font-size:2.2rem;letter-spacing:3px}.cat-head{font-size:.7rem;padding:.5rem .2rem;min-height:50px}.cell-val{font-size:1.2rem}.cell{min-height:44px;padding:.6rem .2rem}.modal{padding:1.3rem}.modal-q{font-size:1.1rem}.header-controls{top:.5rem;right:.5rem}.buzz-btn{padding:1rem 1.5rem;font-size:1.2rem;min-width:130px}}
+</style>
+</head>
+<body>
+<header class="header">
+<div class="header-controls"><button class="text-btn" onclick="showHS()">🏆 Scores</button><button class="icon-btn" id="muteBtn" onclick="toggleMute()" title="Toggle sound">🔊</button></div>
+<div class="header-title">JeoPDE!</div><div class="header-sub">Programmed DNA Elimination</div><div class="header-dna">🧬 ✂️ 🧬</div>
+</header>
+<div class="container">
+<div id="setupCard" class="setup-card"><h2>🧬 ✂️ Player Setup</h2><p>Select number of players:</p><div class="player-btns"><button class="btn btn-blue" onclick="pickCount(1)" id="pc1">1 Player</button><button class="btn btn-blue" onclick="pickCount(2)" id="pc2">2 Players</button><button class="btn btn-blue" onclick="pickCount(3)" id="pc3">3 Players</button></div><div id="nameArea"></div><button class="btn btn-gold" id="goBtn" style="display:none;margin-top:1rem" onclick="startGame()">Start Game</button></div>
+<div class="scoreboard" id="scoreboard"></div>
+<div class="round-bar" id="roundBar"><div class="round-label" id="roundLabel"><span>JeoPDE!</span> — Round 1</div><button class="btn btn-sm" id="skipBtn" onclick="skipRound()">Skip to Round 2 ▸</button></div>
+<div class="board" id="board"></div>
+</div>
+<div class="overlay" id="qOverlay"><div class="modal">
+<div class="timer-strip" id="timerStrip"><span class="timer-label" id="timerLabel">30</span><div class="timer-track"><div class="timer-fill" id="timerFill"></div></div></div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem"><span class="modal-value" id="mValue"></span><span class="dd-badge" id="ddBadge">🎯 DAILY DOUBLE</span></div>
+<div class="modal-q" id="mQuestion"></div>
+<div class="buzz-area" id="buzzArea">
+<div class="buzz-status" id="buzzStatus">📖 Read the clue...</div>
+<div class="buzz-countdown" id="buzzCountdown"></div>
+<div class="buzz-btns" id="buzzBtns"></div>
+<div class="buzz-miss" id="buzzMiss" style="display:none"></div>
+</div>
+<div class="wager-area" id="wagerArea"><p style="font-family:'Oswald',sans-serif;font-size:1.2rem;margin-bottom:.8rem">Enter your wager:</p><input type="number" class="wager-field" id="wagerField" min="0" value="0"><p class="wager-hint" id="wagerHint"></p><button class="btn btn-gold" style="margin-top:1rem" onclick="lockWager()">Confirm Wager</button></div>
+<div class="choices" id="mChoices"></div>
+<button class="btn btn-gold" id="lockBtn" style="display:none;margin-top:1rem" onclick="lockAnswer()">Lock In</button>
+<div class="feedback-box" id="fbBox"></div><div class="explain-box" id="expBox"></div>
+<button class="btn btn-sm" id="contBtn" style="display:none;margin-top:1rem" onclick="closeQ()">Continue</button>
+</div></div>
+<div class="overlay" id="finalOverlay"><div class="modal">
+<div class="final-banner"><h1>🏆 Final JeoPDE! 🏆</h1><h2 id="finalCat"></h2></div>
+<div id="fWagerSec"><p style="font-family:'Oswald',sans-serif;font-size:1.1rem;margin-bottom:1rem">Place your wagers:</p><div id="fWagerInputs"></div><button class="btn btn-gold" style="margin-top:1rem" onclick="revealFinal()">Submit Wagers &amp; Reveal</button></div>
+<div id="fQuestionSec" style="display:none"><div class="modal-q" id="fqText" style="background:rgba(0,0,0,.2);padding:1.2rem;border-radius:8px;border:2px solid var(--gold)"></div><div id="fChoicesArea"></div><button class="btn btn-gold" style="margin-top:1rem" onclick="submitFinal()">Submit Final Answers</button></div>
+<div id="fResultSec" style="display:none"><div id="fScores" style="margin:1rem 0"></div><div class="explain-box" id="fExp" style="display:block"></div><div class="winner-box"><h1 id="winnerText"></h1></div><button class="btn btn-gold" onclick="location.reload()">New Game</button></div>
+</div></div>
+<div class="overlay" id="hsOverlay"><div class="modal" style="max-width:480px">
+<h2 style="font-family:'Oswald',sans-serif;color:var(--bright-gold);text-align:center;margin-bottom:.5rem">🏆 Leaderboard</h2>
+<p id="hsStatus" style="text-align:center;font-size:.85rem;color:rgba(255,255,255,.4);margin-bottom:.5rem"></p>
+<ul class="hs-list" id="hsList"></ul>
+<div style="text-align:center;margin-top:1rem"><button class="btn btn-gold" style="padding:.6rem 1.5rem;font-size:1rem" onclick="document.getElementById('hsOverlay').style.display='none'">Close</button></div>
+<div class="admin-bar" id="adminBar"><p style="font-family:'Oswald',sans-serif;font-size:.9rem;color:var(--gold);margin-bottom:.5rem">🔒 Admin</p><button class="btn-danger" onclick="adminClearAll()">Clear All Scores</button></div>
+<div style="text-align:center;margin-top:.8rem"><button class="text-btn" style="font-size:.7rem" onclick="toggleAdmin()">Admin</button></div>
+</div></div>
+<div class="splash" id="splash"></div>
+<footer class="footer">Created by <strong>James Ryan Simmons, PhD</strong> · University of Tennessee, Knoxville<br>🧬 JeoPDE! — Built for PDE researchers, students, and the scientifically curious</footer>
+<script>
+// === FIREBASE CONFIG ===
+// Replace with your Firebase config. See README for setup instructions.
+const FIREBASE_CONFIG={apiKey:"YOUR_API_KEY",authDomain:"YOUR_PROJECT.firebaseapp.com",databaseURL:"https://YOUR_PROJECT-default-rtdb.firebaseio.com",projectId:"YOUR_PROJECT",storageBucket:"YOUR_PROJECT.appspot.com",messagingSenderId:"000000000000",appId:"YOUR_APP_ID"};
+const ADMIN_PASS="pde2026"; // Change this
+let db=null,useFirebase=false;
+try{if(!FIREBASE_CONFIG.apiKey.startsWith("YOUR_")){firebase.initializeApp(FIREBASE_CONFIG);db=firebase.database();useFirebase=true}}catch(e){console.warn("Firebase not configured:",e)}
+
+// === HIGH SCORES ===
+const HSK='jeopde_highscores';
+function saveScore(n,s){const e={name:n,score:s,date:new Date().toLocaleDateString(),ts:Date.now()};if(useFirebase)db.ref('scores').push(e);else{const l=getLS();l.push(e);l.sort((a,b)=>b.score-a.score);localStorage.setItem(HSK,JSON.stringify(l.slice(0,30)))}}
+function getLS(){try{return JSON.parse(localStorage.getItem(HSK))||[]}catch(e){return[]}}
+function showHS(){const el=document.getElementById('hsList'),st=document.getElementById('hsStatus');document.getElementById('adminBar').classList.remove('show');if(useFirebase){st.textContent='Loading...';db.ref('scores').orderByChild('score').limitToLast(30).once('value',snap=>{const e=[];snap.forEach(c=>{e.push({key:c.key,...c.val()})});e.sort((a,b)=>b.score-a.score);renderHS(e,true);st.textContent='🌐 Shared leaderboard'}).catch(()=>{renderHS(getLS(),false);st.textContent='📱 Local scores'})}else{renderHS(getLS(),false);st.textContent='📱 Local scores'}document.getElementById('hsOverlay').style.display='block'}
+function renderHS(l,fb){const el=document.getElementById('hsList');if(!l.length){el.innerHTML='<li class="hs-entry" style="justify-content:center;opacity:.5">No scores yet</li>';return}el.innerHTML=l.map((h,i)=>`<li class="hs-entry"><span class="hs-rank">${i+1}.</span><span class="hs-name">${h.name}</span><span class="hs-score">$${(h.score||0).toLocaleString()}</span><span class="hs-date">${h.date||''}</span>${fb&&h.key?`<button class="btn-danger hs-del" onclick="adminDel('${h.key}')">✕</button>`:''}</li>`).join('')}
+let adminMode=false;
+function toggleAdmin(){if(!adminMode){const pw=prompt('Admin password:');if(pw!==ADMIN_PASS){alert('Wrong password.');return}adminMode=true}document.getElementById('adminBar').classList.toggle('show')}
+function adminClearAll(){if(!confirm('Delete ALL scores?'))return;if(useFirebase)db.ref('scores').remove().then(()=>showHS());else{localStorage.removeItem(HSK);showHS()}}
+function adminDel(k){if(!adminMode)return;if(!confirm('Delete this entry?'))return;if(useFirebase)db.ref('scores/'+k).remove().then(()=>showHS())}
+
+// === QUESTION BANK ===
+const Q={
+round1:{
+"Elimin-8 or Not":{100:{q:"This process in nematodes permanently removes germline-specific sequences from somatic cells.",c:["What is programmed DNA elimination?","What is DNA repair?","What is chromosome duplication?","What is methylation?"],a:0,exp:"PDE removes germline-specific sequences from somatic cells."},200:{q:"PDE is not random but consistently eliminates these in every developmental cycle.",c:["What are telomeres?","What are the same DNA sequences?","What are all introns?","What are random mutations?"],a:1,exp:"PDE is tightly regulated — the same sequences are eliminated each cycle."},300:{q:"Unlike apoptosis, PDE removes DNA without triggering this cellular response.",c:["What is cell death?","What is inflammation?","What is immune activation?","What is DNA damage response?"],a:0,exp:"PDE precisely removes DNA while the cell survives and divides."},400:{q:"In Ascaris, approximately this percentage of the germline genome is eliminated.",c:["What is ~5%?","What is ~15%?","What is ~25%?","What is ~50%?"],a:2,exp:"About 25% of the Ascaris germline genome is eliminated."},500:{q:"PDE was first described in this organism by Theodor Boveri in the 1880s.",c:["What is C. elegans?","What is Drosophila?","What is Parascaris (Ascaris)?","What is sea urchin?"],a:2,exp:"Boveri discovered chromatin diminution in Parascaris equorum."}},
+"Chromosomal Shenanigans":{100:{q:"Parascaris univalens has this many germline chromosomes.",c:["What is 1?","What is 2?","What is 24?","What is 36?"],a:0,exp:"P. univalens has a single germline chromosome."},200:{q:"After PDE, both Ascaris and Parascaris produce this many somatic chromosomes.",c:["What is 12?","What is 24?","What is 36?","What is 48?"],a:2,exp:"Despite different germline karyotypes (24 vs 1), both converge on 36 somatic chromosomes."},300:{q:"These structures are added to new chromosome ends after PDE breaks.",c:["What are centromeres?","What are telomeres?","What are origins of replication?","What are enhancers?"],a:1,exp:"De novo telomere addition heals broken chromosome ends."},400:{q:"Ascaris has this many germline chromosomes before PDE.",c:["What is 1?","What is 12?","What is 24?","What is 48?"],a:2,exp:"Ascaris has 24 germline chromosomes that fragment into 36 somatic chromosomes."},500:{q:"Convergent production of 36 somatic chromosomes from different karyotypes suggests this type of evolutionary pressure.",c:["What is neutral drift?","What is purifying/stabilizing selection?","What is sexual selection?","What is genetic drift?"],a:1,exp:"Conserved outcome despite divergent starting points indicates strong selective constraint."}},
+"Germline vs Soma":{100:{q:"PDE occurs exclusively in this cell lineage, sparing the other.",c:["What is soma (sparing germline)?","What is germline (sparing soma)?","What is both equally?","What is neural lineage?"],a:0,exp:"PDE removes DNA from somatic cells while preserving the complete germline genome."},200:{q:"In Ascaris, PDE initiates at this early embryonic stage.",c:["What is the 2-cell stage?","What is the 4-cell stage?","What is the 8-cell stage?","What is the 16-cell stage?"],a:1,exp:"PDE begins at the 4-cell stage."},300:{q:"These repetitive DNA elements make up the majority of eliminated sequences.",c:["What are satellite repeats?","What are tRNAs?","What are rRNAs?","What are SINEs only?"],a:0,exp:"Satellite and other repetitive DNA elements constitute most eliminated material."},400:{q:"Eliminated regions in Ascaris are enriched for these histone modifications.",c:["What are activating marks (H3K4me3)?","What are repressive marks (H3K9me3)?","What are bivalent marks?","What are acetylation marks?"],a:1,exp:"Eliminated regions are enriched for repressive marks like H3K9me3."},500:{q:"PDE may have evolved as an extreme mechanism for this biological process.",c:["What is DNA replication?","What is gene regulation / silencing?","What is recombination?","What is cell migration?"],a:1,exp:"PDE is an extreme form of gene silencing — physically removing DNA."}},
+"Model Organisms":{100:{q:"This model nematode does NOT undergo PDE.",c:["What is Ascaris?","What is C. elegans?","What is Parascaris?","What is Oscheius?"],a:1,exp:"C. elegans does not undergo PDE."},200:{q:"PDE has been described in nematodes, copepods, lampreys, and these jawless fish.",c:["What are hagfish?","What are zebrafish?","What are hydra?","What are ciliates?"],a:0,exp:"Hagfish are among vertebrates with PDE."},300:{q:"Oscheius tipulae is valuable for PDE research because it is free-living and amenable to these techniques.",c:["What is genetic transformation?","What is CRISPR?","What is both?","What is RNAi only?"],a:2,exp:"O. tipulae is lab-tractable unlike parasitic nematodes."},400:{q:"In lampreys, PDE eliminates approximately this fraction of the germline genome.",c:["What is ~5%?","What is ~20%?","What is ~50%?","What is ~75%?"],a:1,exp:"Lampreys eliminate roughly 20% of germline DNA."},500:{q:"Unlike Ascaris PDE in early embryos, ciliate PDE occurs during this process.",c:["What is conjugation?","What is binary fission?","What is budding?","What is encystment?"],a:0,exp:"In ciliates, DNA elimination occurs during macronuclear development after conjugation."}},
+"PDE Mechanisms":{100:{q:"DNA breaks during PDE occur at specific sites called these.",c:["What are CBRs?","What are fragile sites?","What are hot spots?","What are splice sites?"],a:0,exp:"Chromosomal Breakage Regions are where DNA breaks occur during PDE."},200:{q:"After PDE breaks, chromosome ends are healed by this enzyme.",c:["What is DNA polymerase?","What is telomerase?","What is ligase?","What is helicase?"],a:1,exp:"Telomerase adds telomeric repeats to new chromosome ends."},300:{q:"Hi-C data shows CBRs form 3D interactions, suggesting breaks are guided by this.",c:["What is spatial organization?","What is random collision?","What is transcription?","What is DNA methylation?"],a:0,exp:"3D proximity of CBRs suggests spatial organization guides the break process."},400:{q:"CBR interactions forming before PDE initiates suggests the break mechanism is this.",c:["What is sequence-dependent?","What is predetermined/programmed?","What is random?","What is error-prone?"],a:1,exp:"Pre-formed CBR interactions indicate a programmed mechanism."},500:{q:"Despite millions of years of divergence, Ascaris and Parascaris CBRs show this remarkable property.",c:["What is identical DNA sequence?","What is conserved spatial positioning?","What is random distribution?","What is telomeric sequence?"],a:1,exp:"CBRs show conserved 3D spatial organization despite sequence divergence."}}
+},
+round2:{
+"Hi-C & 3D Genome":{200:{q:"Hi-C measures these types of interactions between genomic loci.",c:["What are protein-protein interactions?","What are 3D chromatin contacts?","What are genetic interactions?","What are RNA-DNA interactions?"],a:1,exp:"Hi-C captures chromatin conformation via proximity-based ligation."},400:{q:"This Hi-C normalization method corrects for systematic biases.",c:["What is ICE?","What is RPKM?","What is quantile normalization?","What is Z-score?"],a:0,exp:"ICE removes biases from GC content, mappability, and fragment length."},600:{q:"A/B compartments from Hi-C correspond to these chromatin states.",c:["What are active (A) and inactive (B)?","What are coding (A) and noncoding (B)?","What are euchromatin (A) and centromere (B)?","What are replicated (A) and unreplicated (B)?"],a:0,exp:"A = active/open chromatin; B = inactive/closed."},800:{q:"Insulation scores identify boundaries of these self-interacting domains.",c:["What are TADs?","What are operons?","What are chromosomal territories?","What are replication domains?"],a:0,exp:"TAD boundaries show high insulation scores."},1000:{q:"Saddle plots quantify interaction strength between regions sorted by this value.",c:["What is gene expression?","What is eigenvector/compartment score?","What is GC content?","What is replication timing?"],a:1,exp:"Saddle plots use eigenvector-ranked regions."}},
+"CBRs & Breaks":{200:{q:"CBR stands for this.",c:["What is Chromosomal Breakage Region?","What is Chromatin Binding Region?","What is Condensed Bridge Region?","What is Centromeric Break Region?"],a:0,exp:"Chromosomal Breakage Regions."},400:{q:"Ascaris has approximately this many CBRs.",c:["What is ~10?","What is ~25?","What is ~44?","What is ~100?"],a:2,exp:"About 44 CBRs in the Ascaris germline genome."},600:{q:"CBR trans-interactions across chromosomes suggest this.",c:["What is a shared nuclear compartment?","What is random diffusion?","What is chromosome fusion?","What is transposition?"],a:0,exp:"CBRs may cluster in a shared nuclear space before PDE."},800:{q:"The telomeric repeat added after PDE in Ascaris is this.",c:["What is TTAGGC?","What is TTAGGG?","What is TTAAGG?","What is TTAGCC?"],a:0,exp:"TTAGGC is the Ascaris telomeric repeat."},1000:{q:"CBR spatial clustering before elimination suggests the break mechanism does NOT require this.",c:["What is specific DNA sequence recognition?","What is ATP?","What is cell division?","What is transcription?"],a:0,exp:"Structure-based, not sequence-based, mechanism."}},
+"Comparative Genomics":{200:{q:"Ascaris and Parascaris diverged approximately this many million years ago.",c:["What is ~10 MYA?","What is ~30 MYA?","What is ~50 MYA?","What is ~100 MYA?"],a:2,exp:"~50 million years of divergence with conserved PDE outcomes."},400:{q:"Despite different karyotypes, Ascaris and Parascaris somatic genomes show conserved organization of these.",c:["What are A/B compartments?","What are centromere positions?","What are intron sizes?","What are transposon families?"],a:0,exp:"A/B compartment patterns are conserved."},600:{q:"Parascaris is especially useful for studying this aspect of PDE.",c:["What is how breaks create chromosomes from a single molecule?","What is telomere biology?","What is DNA repair?","What is gene regulation?"],a:0,exp:"One chromosome fragmented into 36."},800:{q:"PDE genome assemblies often require this technology.",c:["What is long-read sequencing (PacBio/ONT)?","What is Sanger?","What is microarray?","What is short-read only?"],a:0,exp:"Long reads span repetitive eliminated regions."},1000:{q:"Conservation of 36 somatic chromosomes despite different germline karyotypes is evidence for this.",c:["What is convergent evolution?","What is divergent evolution?","What is neutral evolution?","What is genetic drift?"],a:0,exp:"Convergent evolution."}},
+"Epigenetic Marks":{200:{q:"This histone mark is depleted in eliminated regions.",c:["What is H3K4me3?","What is H3K9me3?","What is H3K27me3?","What is H4K20me3?"],a:0,exp:"H3K4me3 marks active promoters, absent from eliminated regions."},400:{q:"ATAC-seq measures this property of chromatin.",c:["What is accessibility?","What is methylation?","What is replication timing?","What is histone modification?"],a:0,exp:"ATAC-seq identifies open chromatin."},600:{q:"Eliminated regions are enriched for this repressive modification.",c:["What is H3K4me3?","What is H3K36me3?","What is H3K9me3?","What is H3K4me1?"],a:2,exp:"H3K9me3 marks eliminated heterochromatin."},800:{q:"A compartments correlate with these epigenetic features.",c:["What are active marks and open chromatin?","What are repressive marks?","What are no modifications?","What is DNA methylation only?"],a:0,exp:"Active marks, ATAC-seq signal, and gene expression."},1000:{q:"Combining Hi-C, ChIP-seq, ATAC-seq, and RNA-seq is an example of this.",c:["What is multi-omics integration?","What is single-cell analysis?","What is population genetics?","What is phylogenomics?"],a:0,exp:"Multi-omics integration."}},
+"Evolution of PDE":{200:{q:"PDE evolved independently in nematodes, copepods, lampreys, hagfish, and ciliates.",c:["What is convergent evolution?","What is co-evolution?","What is adaptive radiation?","What is genetic drift?"],a:0,exp:"PDE arose independently across diverse lineages."},400:{q:"One PDE hypothesis involves silencing these harmful genomic elements.",c:["What are transposable elements?","What are tumor suppressors?","What are housekeeping genes?","What are ribosomal genes?"],a:0,exp:"PDE may silence transposons and repeats."},600:{q:"PDE may have evolved for genome size reduction to achieve this.",c:["What is faster cell division?","What is larger cell size?","What is more gene copies?","What is increased mutation?"],a:0,exp:"Smaller genomes allow faster S-phase."},800:{q:"Eliminated DNA being mostly repetitive supports PDE as a form of this.",c:["What is genome defense?","What is gene duplication?","What is recombination?","What is mutagenesis?"],a:0,exp:"Genome defense: removing parasitic DNA."},1000:{q:"Independent PDE evolution with conserved outcomes exemplifies this principle.",c:["What is constrained convergence?","What is random chance?","What is horizontal gene transfer?","What is founder effect?"],a:0,exp:"Functional requirements drive convergent solutions."}}
+},
+final:[
+{cat:"The Ultimate PDE Question",q:"Boveri's 1887 observation that only specific cells lose chromatin led him to propose this fundamental concept.",c:["What is the chromosome theory of inheritance?","What is the central dogma?","What is epigenetics?","What is cell fate determination?"],a:0,exp:"Boveri's chromatin diminution work established that chromosomes carry hereditary information."},
+{cat:"Genome Architecture",q:"Conserved A/B compartment patterns between species separated by ~50MY despite different karyotypes suggests this.",c:["What is that compartmentalization is functionally constrained?","What is that compartments are random?","What is that chromosome number determines compartments?","What is that compartments drift neutrally?"],a:0,exp:"Conservation despite divergence = functional constraint on 3D genome organization."},
+{cat:"Cutting Edge PDE",q:"If CBRs interact in 3D space independently of DNA sequence, the most likely mediating component is this.",c:["What are proteins/protein complexes?","What is RNA?","What is lipid membrane?","What is DNA sequence homology?"],a:0,exp:"Protein-mediated interactions bring loci together independent of sequence."},
+{cat:"PDE Across Life",q:"Independent PDE evolution from ciliates to vertebrates achieving similar outcomes is best explained by this.",c:["What is convergent evolution driven by common selective pressure?","What is shared ancestry?","What is horizontal gene transfer?","What is random mutation?"],a:0,exp:"Common selective pressures drove independent PDE origins."}
+]};
+
+// === SOUND ===
+let audioCtx=null,muted=false;
+function getAC(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx}
+function toggleMute(){muted=!muted;const b=document.getElementById('muteBtn');b.textContent=muted?'🔇':'🔊';b.classList.toggle('muted',muted)}
+function tone(f,d,t='sine',v=.15,dl=0){if(muted)return;try{const c=getAC(),o=c.createOscillator(),g=c.createGain();o.type=t;o.frequency.value=f;g.gain.setValueAtTime(v,c.currentTime+dl);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+dl+d);o.connect(g);g.connect(c.destination);o.start(c.currentTime+dl);o.stop(c.currentTime+dl+d)}catch(e){}}
+function sfxSelect(){tone(600,.08,'sine',.12);tone(800,.12,'sine',.1,.06)}
+function sfxCorrect(){tone(523,.12,'sine',.15);tone(659,.12,'sine',.15,.1);tone(784,.2,'sine',.15,.2)}
+function sfxWrong(){tone(300,.3,'sawtooth',.1);tone(250,.4,'sawtooth',.08,.15)}
+function sfxTimeout(){tone(400,.15,'triangle',.1);tone(300,.15,'triangle',.1,.15);tone(200,.3,'triangle',.1,.3)}
+function sfxDD(){[392,494,587,659,784].forEach((f,i)=>tone(f,.15,'sine',.13,i*.08))}
+function sfxTick(){tone(1000,.03,'sine',.06)}
+function sfxBuzz(){tone(880,.06,'square',.1);tone(1100,.08,'square',.08,.05)}
+function sfxReveal(){[523,587,659,784,880].forEach((f,i)=>tone(f,.2,'triangle',.1,i*.12))}
+function sfxWin(){[523,659,784,1047,784,1047].forEach((f,i)=>tone(f,.18,'sine',.12,i*.12))}
+function sfxReading(){tone(440,.4,'sine',.05)}
+
+// === STATE ===
+let players=[],curPlayer=0,round=1,answered={round1:new Set(),round2:new Set()},dd={round1:new Set(),round2:new Set()};
+let wager=0,picked=-1,curQ=null,timer=null,timeLeft=30,lastCorrectPlayer=0;
+let buzzTimer=null,buzzActive=false,readingTimer=null;
+const TSEC=30,BUZZ_KEYS=['q','w','e'];
+
+// === SETUP ===
+let cc=0;
+function pickCount(n){cc=n;document.querySelectorAll('.player-btns .btn').forEach(b=>b.classList.remove('selected'));document.getElementById('pc'+n).classList.add('selected');const a=document.getElementById('nameArea');a.innerHTML='';for(let i=0;i<n;i++)a.innerHTML+=`<input class="name-input" id="pn${i}" placeholder="Player ${i+1}" maxlength="20">`;document.getElementById('goBtn').style.display='inline-block';sfxSelect()}
+function startGame(){players=[];for(let i=0;i<cc;i++){const v=document.getElementById('pn'+i).value.trim();players.push({name:v||'Player '+(i+1),score:0})}curPlayer=0;lastCorrectPlayer=0;round=1;answered={round1:new Set(),round2:new Set()};placeDD();document.getElementById('setupCard').style.display='none';document.getElementById('scoreboard').style.display='flex';document.getElementById('roundBar').style.display='flex';document.getElementById('board').style.display='grid';updateScore();buildBoard();sfxSelect()}
+function placeDD(){dd={round1:new Set(),round2:new Set()};addDD('round1',1);addDD('round2',2)}
+function addDD(rk,n){const cats=Object.keys(Q[rk]);let p=0;while(p<n){const c=cats[Math.floor(Math.random()*cats.length)],vs=Object.keys(Q[rk][c]),v=vs[Math.floor(Math.random()*vs.length)],k=c+'|'+v;if(!dd[rk].has(k)){dd[rk].add(k);p++}}}
+function updateScore(){document.getElementById('scoreboard').innerHTML=players.map((p,i)=>`<div class="score-card ${i===curPlayer?'active':''}"><div class="score-name">${p.name}</div><div class="score-val">$${p.score.toLocaleString()}</div></div>`).join('')}
+function buildBoard(){const rk=round===1?'round1':'round2',cats=Object.keys(Q[rk]),vals=Object.keys(Q[rk][cats[0]]).map(Number).sort((a,b)=>a-b),board=document.getElementById('board');board.style.gridTemplateColumns=`repeat(${cats.length},1fr)`;if(round===1){document.getElementById('roundLabel').innerHTML='<span>JeoPDE!</span> — Round 1';document.getElementById('skipBtn').textContent='Skip to Round 2 ▸';document.getElementById('skipBtn').onclick=()=>skipRound()}else{document.getElementById('roundLabel').innerHTML='<span>Double JeoPDE!</span> — Round 2';document.getElementById('skipBtn').textContent='Skip to Final ▸';document.getElementById('skipBtn').onclick=()=>goFinal()}let h='';cats.forEach(c=>{h+=`<div class="cat-head">${c}</div>`});vals.forEach(v=>{cats.forEach(c=>{const k=c+'|'+v,done=answered[rk].has(k);h+=`<div class="cell ${done?'done':''}" onclick="${done?'':`openQ('${rk}','${c}',${v})`}"><span class="cell-val">$${v}</span></div>`})});board.innerHTML=h}
+function skipRound(){if(round===1)showSplash('Double JeoPDE!','Values are doubled!',()=>{round=2;buildBoard()})}
+function goFinal(){startFinal()}
+function showSplash(t,s,cb){const el=document.getElementById('splash');el.innerHTML=`<h1>🧬 ${t} 🧬</h1><p>${s}</p>`;el.style.display='flex';sfxReveal();setTimeout(()=>{el.style.display='none';cb()},2200)}
+
+// =============================================================================
+// QUESTION FLOW
+// Single player: cell → clue + choices + 30s timer
+// Multiplayer:   cell → clue → 5s reading → 10s buzz window → answer + 30s timer
+//                if nobody buzzes → no points, continue
+// Daily Double:  goes to curPlayer (board control), wager, then answer
+// =============================================================================
+function openQ(rk,cat,val){
+    const k=cat+'|'+val;if(answered[rk].has(k))return;
+    const qd=Q[rk][cat][val],isDD=dd[rk].has(k);
+    curQ={rk,cat,val,qd,isDD,key:k};picked=-1;wager=val;sfxSelect();resetModal();
+    document.getElementById('mValue').textContent='$'+val;
+    document.getElementById('mQuestion').textContent=qd.q;
+    if(isDD){
+        document.getElementById('ddBadge').style.display='inline-block';sfxDD();
+        document.getElementById('wagerArea').style.display='block';
+        const mx=Math.max(players[curPlayer].score,val);
+        document.getElementById('wagerField').max=mx;document.getElementById('wagerField').value=val;
+        document.getElementById('wagerHint').textContent=`${players[curPlayer].name} — max: $${mx.toLocaleString()}`;
+    } else if(players.length>1){
+        startBuzzPhase();
+    } else {
+        wager=val;renderC();
+    }
+    document.getElementById('qOverlay').style.display='block';
+}
+function resetModal(){stopTimer();stopBuzz();document.getElementById('timerStrip').classList.remove('active');document.getElementById('ddBadge').style.display='none';document.getElementById('buzzArea').style.display='none';document.getElementById('wagerArea').style.display='none';document.getElementById('mChoices').innerHTML='';document.getElementById('lockBtn').style.display='none';document.getElementById('fbBox').style.display='none';document.getElementById('expBox').style.display='none';document.getElementById('contBtn').style.display='none';document.getElementById('buzzMiss').style.display='none'}
+
+// === BUZZ-IN: 5s reading → 10s buzz window ===
+function startBuzzPhase(){
+    const area=document.getElementById('buzzArea');
+    const status=document.getElementById('buzzStatus');
+    const countdown=document.getElementById('buzzCountdown');
+    const btnsEl=document.getElementById('buzzBtns');
+    document.getElementById('buzzMiss').style.display='none';
+    buzzActive=false;
+
+    // Render buttons (disabled during reading)
+    btnsEl.innerHTML=players.map((p,i)=>
+        `<button class="buzz-btn" id="bz${i}" onclick="buzzIn(${i})">${p.name}<span class="buzz-key">Key: ${BUZZ_KEYS[i].toUpperCase()}</span></button>`
+    ).join('');
+    area.style.display='block';
+
+    // Phase 1: Reading (5 seconds)
+    status.textContent='📖 Read the clue...';
+    let readSec=5;
+    countdown.textContent=readSec;
+    sfxReading();
+    readingTimer=setInterval(()=>{
+        readSec--;
+        countdown.textContent=readSec;
+        if(readSec<=0){
+            clearInterval(readingTimer);readingTimer=null;
+            startBuzzWindow();
+        }
+    },1000);
+}
+
+function startBuzzWindow(){
+    buzzActive=true;
+    const status=document.getElementById('buzzStatus');
+    const countdown=document.getElementById('buzzCountdown');
+    status.textContent='⚡ BUZZ IN! ⚡';
+
+    // Enable buttons
+    document.querySelectorAll('.buzz-btn').forEach(b=>b.classList.add('live'));
+
+    // 10 second window
+    let buzzSec=10;
+    countdown.textContent=buzzSec;
+    buzzTimer=setInterval(()=>{
+        buzzSec--;
+        countdown.textContent=buzzSec;
+        if(buzzSec<=3)sfxTick();
+        if(buzzSec<=0){
+            clearInterval(buzzTimer);buzzTimer=null;
+            buzzActive=false;
+            nobodyBuzzed();
+        }
+    },1000);
+}
+
+function buzzIn(idx){
+    if(!buzzActive)return;
+    buzzActive=false;stopBuzz();sfxBuzz();
+    curPlayer=idx;updateScore();
+    document.getElementById('buzzArea').style.display='none';
+    wager=curQ.val;renderC();
+}
+
+function nobodyBuzzed(){
+    document.querySelectorAll('.buzz-btn').forEach(b=>b.classList.remove('live'));
+    document.getElementById('buzzStatus').textContent='⏱ Nobody buzzed in!';
+    document.getElementById('buzzCountdown').textContent='';
+    document.getElementById('buzzMiss').style.display='block';
+    document.getElementById('buzzMiss').textContent='No points awarded. Moving on...';
+    sfxTimeout();
+    // Mark answered, no score change
+    answered[curQ.rk].add(curQ.key);
+    setTimeout(()=>{
+        document.getElementById('qOverlay').style.display='none';
+        curPlayer=(curPlayer+1)%players.length;updateScore();buildBoard();checkRoundEnd();
+    },2000);
+}
+
+function stopBuzz(){if(buzzTimer){clearInterval(buzzTimer);buzzTimer=null}if(readingTimer){clearInterval(readingTimer);readingTimer=null}buzzActive=false}
+
+// Keyboard buzz-in (Q, W, E)
+document.addEventListener('keydown',e=>{
+    if(!buzzActive)return;
+    const idx=BUZZ_KEYS.indexOf(e.key.toLowerCase());
+    if(idx>=0&&idx<players.length)buzzIn(idx);
+});
+
+function lockWager(){const mx=Math.max(players[curPlayer].score,curQ.val);let w=parseInt(document.getElementById('wagerField').value)||0;wager=Math.max(0,Math.min(w,mx));document.getElementById('wagerArea').style.display='none';sfxSelect();renderC()}
+function renderC(){const{qd}=curQ;document.getElementById('mChoices').innerHTML=qd.c.map((c,i)=>`<button class="choice" id="ch${i}" onclick="pick(${i})">${c}</button>`).join('');document.getElementById('lockBtn').style.display='inline-block';startTimer()}
+function pick(i){document.querySelectorAll('#mChoices .choice').forEach(b=>b.classList.remove('picked'));document.getElementById('ch'+i).classList.add('picked');picked=i;sfxSelect()}
+function startTimer(){timeLeft=TSEC;const strip=document.getElementById('timerStrip'),fill=document.getElementById('timerFill'),label=document.getElementById('timerLabel');strip.classList.add('active');fill.style.width='100%';fill.classList.remove('danger');label.textContent=timeLeft;timer=setInterval(()=>{timeLeft--;label.textContent=timeLeft;fill.style.width=(timeLeft/TSEC*100)+'%';if(timeLeft<=8)fill.classList.add('danger');if(timeLeft<=5)sfxTick();if(timeLeft<=0){clearInterval(timer);timer=null;picked=-1;lockAnswer(true)}},1000)}
+function stopTimer(){if(timer){clearInterval(timer);timer=null}}
+function lockAnswer(to=false){stopTimer();document.getElementById('timerStrip').classList.remove('active');const{qd,key,rk}=curQ,ok=picked===qd.a;answered[rk].add(key);document.querySelectorAll('#mChoices .choice').forEach((b,i)=>{b.disabled=true;b.onclick=null;if(i===qd.a)b.classList.add('right');if(i===picked&&!ok)b.classList.add('wrong-pick')});const fb=document.getElementById('fbBox');if(to){fb.className='feedback-box fb-time';fb.textContent=`⏱ Time's up! −$${wager.toLocaleString()}`;players[curPlayer].score-=wager;sfxTimeout()}else if(ok){fb.className='feedback-box fb-correct';fb.textContent=`✅ Correct! +$${wager.toLocaleString()}`;players[curPlayer].score+=wager;lastCorrectPlayer=curPlayer;sfxCorrect()}else{fb.className='feedback-box fb-wrong';fb.textContent=`❌ Incorrect! −$${wager.toLocaleString()}`;players[curPlayer].score-=wager;sfxWrong()}fb.style.display='block';document.getElementById('expBox').textContent=qd.exp;document.getElementById('expBox').style.display='block';document.getElementById('lockBtn').style.display='none';document.getElementById('contBtn').style.display='inline-block';updateScore()}
+function closeQ(){document.getElementById('qOverlay').style.display='none';const{qd}=curQ;if(players.length>1){if(picked===qd.a)curPlayer=lastCorrectPlayer;else curPlayer=(curPlayer+1)%players.length;updateScore()}buildBoard();checkRoundEnd()}
+function checkRoundEnd(){const rk=round===1?'round1':'round2',total=Object.keys(Q[rk]).reduce((s,c)=>s+Object.keys(Q[rk][c]).length,0);if(answered[rk].size>=total){if(round===1)showSplash('Double JeoPDE!','Values are doubled!',()=>{round=2;buildBoard()});else startFinal()}}
+
+// === FINAL ===
+function startFinal(){document.getElementById('board').style.display='none';document.getElementById('roundBar').style.display='none';const fq=Q.final[Math.floor(Math.random()*Q.final.length)];curQ={qd:fq};document.getElementById('finalCat').textContent=fq.cat;sfxReveal();document.getElementById('fWagerInputs').innerHTML=players.map((p,i)=>{const mx=Math.max(p.score,0);return`<div style="margin:.8rem 0"><label style="font-family:'Oswald',sans-serif;font-size:1rem">${p.name} ($${p.score.toLocaleString()}) — Max: $${mx.toLocaleString()}</label><br><input type="number" class="wager-field" id="fw${i}" min="0" max="${mx}" value="0" style="margin-top:.4rem;font-size:1.4rem;width:150px"></div>`}).join('');document.getElementById('fWagerSec').style.display='block';document.getElementById('fQuestionSec').style.display='none';document.getElementById('fResultSec').style.display='none';document.getElementById('finalOverlay').style.display='block'}
+function revealFinal(){players.forEach((p,i)=>{const mx=Math.max(p.score,0);let w=parseInt(document.getElementById('fw'+i).value)||0;p.fw=Math.max(0,Math.min(w,mx))});const fq=curQ.qd;document.getElementById('fqText').textContent=fq.q;document.getElementById('fChoicesArea').innerHTML=players.map((p,i)=>`<div style="margin:1rem 0;padding:.8rem;background:rgba(0,0,0,.2);border-radius:8px"><p style="font-family:'Oswald',sans-serif;margin-bottom:.5rem">${p.name} (Wager: $${p.fw.toLocaleString()})</p><div class="choices">${fq.c.map((c,ci)=>`<button class="choice" id="fc${i}_${ci}" onclick="pickF(${i},${ci})">${c}</button>`).join('')}</div></div>`).join('');document.getElementById('fWagerSec').style.display='none';document.getElementById('fQuestionSec').style.display='block';sfxSelect()}
+function pickF(pi,ci){document.querySelectorAll(`[id^="fc${pi}_"]`).forEach(b=>b.classList.remove('picked'));document.getElementById(`fc${pi}_${ci}`).classList.add('picked');players[pi].fa=ci;sfxSelect()}
+function submitFinal(){const fq=curQ.qd;players.forEach(p=>{if(p.fa===fq.a)p.score+=(p.fw||0);else p.score-=(p.fw||0)});document.getElementById('fScores').innerHTML=players.map(p=>`<div style="font-family:'Oswald',sans-serif;font-size:1.3rem;margin:.5rem 0">${p.name}: $${p.score.toLocaleString()} ${p.fa===fq.a?'✅':'❌'}</div>`).join('');document.getElementById('fExp').textContent=fq.exp;const w=players.reduce((b,p)=>p.score>b.score?p:b,players[0]);document.getElementById('winnerText').textContent=`🏆 ${w.name} wins with $${w.score.toLocaleString()}! 🏆`;players.forEach(p=>saveScore(p.name,p.score));document.getElementById('fQuestionSec').style.display='none';document.getElementById('fResultSec').style.display='block';updateScore();sfxWin()}
+</script>
+</body>
+</html>
