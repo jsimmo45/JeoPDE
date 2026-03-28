@@ -8,354 +8,427 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <style>
-:root{--board-blue:#060CE9;--deep-blue:#0a0a3a;--panel-blue:#12126b;--gold:#D7A643;--bright-gold:#FFD700;--correct:#27ae60;--wrong:#c0392b;--timeout-amber:#d4a017;--white:#fff;--cell-hover:#1a1aff}
+:root{--bb:#060CE9;--db:#0a0a3a;--pb:#12126b;--gd:#D7A643;--bg:#FFD700;--ok:#27ae60;--no:#c0392b;--to:#d4a017;--wh:#fff;--hv:#1a1aff}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Libre Franklin',sans-serif;background:var(--deep-blue);min-height:100vh;color:var(--white);overflow-x:hidden}
-.header{background:linear-gradient(180deg,#0d0d4d,var(--deep-blue));text-align:center;padding:1.2rem 1rem .8rem;border-bottom:3px solid var(--gold);position:relative}
-.header-title{font-family:'Corben',cursive;font-size:3.2rem;color:var(--bright-gold);text-shadow:0 0 30px rgba(215,166,67,.4),2px 3px 0 #1a1a4e;letter-spacing:6px;line-height:1}
-.header-sub{font-family:'Oswald',sans-serif;font-size:.95rem;color:rgba(255,255,255,.6);letter-spacing:3px;text-transform:uppercase;margin-top:.2rem}
-.header-dna{font-size:1.4rem;margin-top:.3rem;opacity:.8}
-.header-controls{position:absolute;top:1rem;right:1.2rem;display:flex;gap:.6rem;align-items:center}
-.icon-btn{background:none;border:2px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);font-size:1.3rem;width:40px;height:40px;border-radius:50%;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center}
-.icon-btn:hover{border-color:var(--gold);color:var(--gold)}.icon-btn.muted{opacity:.4}
-.text-btn{background:none;border:2px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);font-family:'Oswald',sans-serif;font-size:.75rem;padding:.4rem .7rem;border-radius:6px;cursor:pointer;text-transform:uppercase;letter-spacing:1px;transition:all .15s}
-.text-btn:hover{border-color:var(--gold);color:var(--gold)}
-.timer-strip{display:none;width:100%;background:rgba(0,0,0,.35);border-radius:30px;padding:5px 10px;border:2px solid var(--gold);align-items:center;gap:10px;margin-bottom:1rem}
-.timer-strip.active{display:flex}
-.timer-track{flex:1;height:16px;background:rgba(0,0,0,.3);border-radius:12px;overflow:hidden}
-.timer-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--bright-gold));border-radius:12px;transition:width .15s linear;width:100%}
-.timer-fill.danger{background:linear-gradient(90deg,#c0392b,#e74c3c)}
-.timer-label{font-family:'Oswald',sans-serif;font-size:1.1rem;font-weight:600;color:var(--bright-gold);min-width:36px;text-align:center}
-.container{max-width:1100px;margin:0 auto;padding:1rem}
-.setup-card{background:var(--panel-blue);border:2px solid var(--gold);border-radius:12px;padding:2.5rem;max-width:480px;margin:2.5rem auto;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.4)}
-.setup-card h2{font-family:'Oswald',sans-serif;font-size:1.8rem;color:var(--bright-gold);margin-bottom:1.2rem}
-.setup-card p{font-size:1rem;opacity:.8;margin-bottom:1rem}
-.player-btns{display:flex;gap:.8rem;justify-content:center;margin-bottom:1rem}
-.btn{font-family:'Oswald',sans-serif;font-weight:600;border:none;border-radius:6px;cursor:pointer;transition:all .15s;text-transform:uppercase;letter-spacing:1px}
-.btn:hover{transform:translateY(-1px)}
-.btn-blue{background:var(--board-blue);color:var(--white);padding:.65rem 1.5rem;font-size:1rem;border:2px solid rgba(255,255,255,.15)}
-.btn-blue:hover{background:var(--cell-hover)}.btn-blue.selected{border-color:var(--bright-gold);box-shadow:0 0 12px rgba(215,166,67,.4)}
-.btn-gold{background:linear-gradient(135deg,var(--gold),#c4922e);color:var(--deep-blue);padding:.8rem 2rem;font-size:1.15rem}
-.btn-gold:hover{background:linear-gradient(135deg,var(--bright-gold),var(--gold))}
-.btn-sm{font-size:.85rem;padding:.4rem 1rem;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.15)}
-.btn-sm:hover{background:rgba(255,255,255,.15);color:var(--white)}
-.btn-danger{font-size:.8rem;padding:.3rem .7rem;background:rgba(192,57,43,.2);color:#e74c3c;border:1px solid rgba(192,57,43,.4);font-family:'Libre Franklin',sans-serif;font-weight:600;cursor:pointer;border-radius:4px;transition:all .15s}
-.btn-danger:hover{background:rgba(192,57,43,.4)}
-.name-input{display:block;width:75%;margin:.6rem auto;padding:.65rem;font-size:1.05rem;font-family:'Libre Franklin',sans-serif;border:2px solid rgba(215,166,67,.3);border-radius:6px;background:rgba(0,0,0,.3);color:var(--white);text-align:center}
-.name-input::placeholder{color:rgba(255,255,255,.35)}.name-input:focus{outline:none;border-color:var(--gold)}
-.scoreboard{display:none;justify-content:center;gap:1.5rem;margin-bottom:.6rem;flex-wrap:wrap}
-.score-card{background:var(--panel-blue);padding:.7rem 1.8rem;border-radius:8px;text-align:center;border:2px solid transparent;transition:all .25s;min-width:150px}
-.score-card.active{border-color:var(--bright-gold);box-shadow:0 0 18px rgba(215,166,67,.3)}
-.score-name{font-family:'Oswald',sans-serif;font-size:1rem;color:rgba(255,255,255,.8)}
-.score-val{font-family:'Oswald',sans-serif;font-size:1.8rem;font-weight:700;color:var(--bright-gold)}
-.round-bar{display:none;align-items:center;justify-content:center;gap:1.2rem;margin-bottom:.8rem}
-.round-label{font-family:'Oswald',sans-serif;font-size:1.5rem;color:var(--white);text-shadow:1px 1px 3px rgba(0,0,0,.5)}
-.round-label span{color:var(--bright-gold)}
-.board{display:none;gap:4px;border-radius:8px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.4);border:3px solid #1a1a6e;background:#000}
-.cat-head{background:var(--board-blue);padding:.85rem .4rem;text-align:center;font-family:'Oswald',sans-serif;font-weight:600;font-size:.85rem;text-transform:uppercase;letter-spacing:.5px;color:var(--white);text-shadow:1px 2px 3px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;min-height:64px;line-height:1.2}
-.cell{background:var(--board-blue);display:flex;align-items:center;justify-content:center;padding:1rem .3rem;cursor:pointer;transition:all .12s;min-height:60px}
-.cell:hover{background:var(--cell-hover);transform:scale(1.04);z-index:2}
-.cell-val{font-family:'Corben',cursive;font-size:1.6rem;color:var(--gold);text-shadow:1px 2px 3px rgba(0,0,0,.6)}
-.cell.done{background:#0a0a2e;cursor:default}.cell.done:hover{transform:none;background:#0a0a2e}.cell.done .cell-val{visibility:hidden}
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:100;overflow-y:auto;backdrop-filter:blur(3px)}
-.modal{background:var(--panel-blue);width:92%;max-width:640px;margin:4vh auto;border-radius:14px;border:2px solid var(--gold);box-shadow:0 10px 50px rgba(0,0,0,.5);padding:2rem;position:relative}
-.modal-value{font-family:'Corben',cursive;font-size:1.8rem;color:var(--gold)}
-.dd-badge{display:none;font-family:'Oswald',sans-serif;font-size:1.1rem;font-weight:600;color:var(--deep-blue);background:var(--bright-gold);padding:.3rem 1rem;border-radius:20px;animation:pop .8s ease-in-out infinite alternate}
+body{font-family:'Libre Franklin',sans-serif;background:var(--db);min-height:100vh;color:var(--wh);overflow-x:hidden}
+.hd{background:linear-gradient(180deg,#0d0d4d,var(--db));text-align:center;padding:1.2rem 1rem .8rem;border-bottom:3px solid var(--gd);position:relative}
+.hd h1{font-family:'Corben',cursive;font-size:3.2rem;color:var(--bg);text-shadow:0 0 30px rgba(215,166,67,.4),2px 3px 0 #1a1a4e;letter-spacing:6px;line-height:1}
+.hd-sub{font-family:'Oswald',sans-serif;font-size:.95rem;color:rgba(255,255,255,.6);letter-spacing:3px;text-transform:uppercase;margin-top:.2rem}
+.hd-dna{font-size:1.4rem;margin-top:.3rem;opacity:.8}
+.hd-ctrl{position:absolute;top:1rem;right:1.2rem;display:flex;gap:.6rem;align-items:center}
+.ib{background:none;border:2px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);font-size:1.3rem;width:40px;height:40px;border-radius:50%;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center}
+.ib:hover{border-color:var(--gd);color:var(--gd)}.ib.mt{opacity:.4}
+.tb{background:none;border:2px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);font-family:'Oswald',sans-serif;font-size:.75rem;padding:.4rem .7rem;border-radius:6px;cursor:pointer;text-transform:uppercase;letter-spacing:1px;transition:all .15s}
+.tb:hover{border-color:var(--gd);color:var(--gd)}
+.ts{display:none;width:100%;background:rgba(0,0,0,.35);border-radius:30px;padding:5px 10px;border:2px solid var(--gd);align-items:center;gap:10px;margin-bottom:1rem}
+.ts.on{display:flex}
+.tt{flex:1;height:16px;background:rgba(0,0,0,.3);border-radius:12px;overflow:hidden}
+.tf{height:100%;background:linear-gradient(90deg,var(--gd),var(--bg));border-radius:12px;transition:width .15s linear;width:100%}
+.tf.dg{background:linear-gradient(90deg,#c0392b,#e74c3c)}
+.tl{font-family:'Oswald',sans-serif;font-size:1.1rem;font-weight:600;color:var(--bg);min-width:36px;text-align:center}
+.ct{max-width:1100px;margin:0 auto;padding:1rem}
+.sc{background:var(--pb);border:2px solid var(--gd);border-radius:12px;padding:2.5rem;max-width:480px;margin:2.5rem auto;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.sc h2{font-family:'Oswald',sans-serif;font-size:1.8rem;color:var(--bg);margin-bottom:1.2rem}
+.sc p{font-size:1rem;opacity:.8;margin-bottom:1rem}
+.pb{display:flex;gap:.8rem;justify-content:center;margin-bottom:1rem}
+.bn{font-family:'Oswald',sans-serif;font-weight:600;border:none;border-radius:6px;cursor:pointer;transition:all .15s;text-transform:uppercase;letter-spacing:1px}
+.bn:hover{transform:translateY(-1px)}
+.bb{background:var(--bb);color:var(--wh);padding:.65rem 1.5rem;font-size:1rem;border:2px solid rgba(255,255,255,.15)}
+.bb:hover{background:var(--hv)}.bb.sl{border-color:var(--bg);box-shadow:0 0 12px rgba(215,166,67,.4)}
+.bg{background:linear-gradient(135deg,var(--gd),#c4922e);color:var(--db);padding:.8rem 2rem;font-size:1.15rem}
+.bg:hover{background:linear-gradient(135deg,var(--bg),var(--gd))}
+.bs{font-size:.85rem;padding:.4rem 1rem;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.15)}
+.bs:hover{background:rgba(255,255,255,.15);color:var(--wh)}
+.bd{font-size:.8rem;padding:.3rem .7rem;background:rgba(192,57,43,.2);color:#e74c3c;border:1px solid rgba(192,57,43,.4);font-family:'Libre Franklin',sans-serif;font-weight:600;cursor:pointer;border-radius:4px}
+.ni{display:block;width:75%;margin:.6rem auto;padding:.65rem;font-size:1.05rem;font-family:'Libre Franklin',sans-serif;border:2px solid rgba(215,166,67,.3);border-radius:6px;background:rgba(0,0,0,.3);color:var(--wh);text-align:center}
+.ni::placeholder{color:rgba(255,255,255,.35)}.ni:focus{outline:none;border-color:var(--gd)}
+.sb{display:none;justify-content:center;gap:1.5rem;margin-bottom:.6rem;flex-wrap:wrap}
+.sp{background:var(--pb);padding:.7rem 1.8rem;border-radius:8px;text-align:center;border:2px solid transparent;transition:all .25s;min-width:150px}
+.sp.ac{border-color:var(--bg);box-shadow:0 0 18px rgba(215,166,67,.3)}
+.sn{font-family:'Oswald',sans-serif;font-size:1rem;color:rgba(255,255,255,.8)}
+.sv{font-family:'Oswald',sans-serif;font-size:1.8rem;font-weight:700;color:var(--bg)}
+.rb{display:none;align-items:center;justify-content:center;gap:1.2rem;margin-bottom:.8rem}
+.rl{font-family:'Oswald',sans-serif;font-size:1.5rem;color:var(--wh);text-shadow:1px 1px 3px rgba(0,0,0,.5)}
+.rl span{color:var(--bg)}
+/* Board wrapper for mobile scroll */
+.bw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -0.5rem;padding:0 .5rem}
+.bd-grid{display:none;gap:4px;border-radius:8px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.4);border:3px solid #1a1a6e;background:#000;min-width:600px}
+.ch{background:var(--bb);padding:.85rem .4rem;text-align:center;font-family:'Oswald',sans-serif;font-weight:600;font-size:.8rem;text-transform:uppercase;letter-spacing:.3px;color:var(--wh);text-shadow:1px 2px 3px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;min-height:60px;line-height:1.15}
+.cl{background:var(--bb);display:flex;align-items:center;justify-content:center;padding:.8rem .3rem;cursor:pointer;transition:all .12s;min-height:54px}
+.cl:hover{background:var(--hv);transform:scale(1.04);z-index:2}
+.cv{font-family:'Corben',cursive;font-size:1.5rem;color:var(--gd);text-shadow:1px 2px 3px rgba(0,0,0,.6)}
+.cl.dn{background:#0a0a2e;cursor:default}.cl.dn:hover{transform:none;background:#0a0a2e}.cl.dn .cv{visibility:hidden}
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:100;overflow-y:auto;backdrop-filter:blur(3px)}
+.md{background:var(--pb);width:92%;max-width:640px;margin:4vh auto;border-radius:14px;border:2px solid var(--gd);box-shadow:0 10px 50px rgba(0,0,0,.5);padding:2rem;position:relative}
+.mv{font-family:'Corben',cursive;font-size:1.8rem;color:var(--gd)}
+.dd{display:none;font-family:'Oswald',sans-serif;font-size:1.1rem;font-weight:600;color:var(--db);background:var(--bg);padding:.3rem 1rem;border-radius:20px;animation:pop .8s ease-in-out infinite alternate}
 @keyframes pop{from{transform:scale(1)}to{transform:scale(1.06)}}
-.modal-q{font-size:1.3rem;line-height:1.6;margin:1.2rem 0;color:var(--white)}
-.choices{display:flex;flex-direction:column;gap:.6rem}
-.choice{display:block;width:100%;padding:.85rem 1rem;font-family:'Libre Franklin',sans-serif;font-size:1.05rem;text-align:left;background:rgba(255,255,255,.06);color:var(--white);border:2px solid rgba(255,255,255,.12);border-radius:8px;cursor:pointer;transition:all .15s}
-.choice:hover{background:rgba(255,255,255,.12);border-color:rgba(215,166,67,.4)}
-.choice.picked{background:rgba(215,166,67,.15);border-color:var(--gold)}
-.choice.right{background:rgba(39,174,96,.2);border-color:var(--correct)}
-.choice.wrong-pick{background:rgba(192,57,43,.2);border-color:var(--wrong)}
-.choice[disabled]{cursor:default;opacity:.85}
-.feedback-box{display:none;padding:1rem;border-radius:8px;font-family:'Oswald',sans-serif;font-size:1.3rem;text-align:center;margin-top:1rem}
-.feedback-box.fb-correct{background:rgba(39,174,96,.2);border:2px solid var(--correct);color:#2ecc71}
-.feedback-box.fb-wrong{background:rgba(192,57,43,.2);border:2px solid var(--wrong);color:#e74c3c}
-.feedback-box.fb-time{background:rgba(212,160,23,.2);border:2px solid var(--timeout-amber);color:#f1c40f}
-.explain-box{display:none;background:rgba(0,0,0,.25);border-left:4px solid var(--gold);padding:.85rem 1rem;margin-top:.8rem;border-radius:0 8px 8px 0;font-size:.95rem;line-height:1.5;color:rgba(255,255,255,.85)}
-.wager-area{display:none;text-align:center;margin:1.5rem 0}
-.wager-field{font-family:'Oswald',sans-serif;font-size:2rem;width:180px;text-align:center;padding:.5rem;border:3px solid var(--gold);border-radius:8px;background:rgba(0,0,0,.3);color:var(--bright-gold)}
-.wager-hint{font-size:.9rem;color:rgba(255,255,255,.5);margin-top:.5rem}
-/* Buzz-in */
-.buzz-area{display:none;text-align:center;margin:1.5rem 0}
-.buzz-status{font-family:'Oswald',sans-serif;font-size:1.4rem;color:var(--bright-gold);margin-bottom:.5rem}
-.buzz-countdown{font-family:'Corben',cursive;font-size:2.5rem;color:var(--bright-gold);margin:.5rem 0}
-.buzz-btns{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:.8rem}
-.buzz-btn{font-family:'Oswald',sans-serif;font-size:1.4rem;padding:1.2rem 2.5rem;background:rgba(255,215,0,.08);border:3px solid rgba(255,215,0,.3);color:rgba(255,255,255,.4);border-radius:12px;cursor:default;transition:all .15s;min-width:160px;-webkit-tap-highlight-color:transparent;user-select:none;touch-action:manipulation}
-.buzz-btn.live{background:rgba(255,215,0,.12);border-color:var(--gold);color:var(--bright-gold);cursor:pointer;animation:buzzpulse 1s ease-in-out infinite}
-.buzz-btn.live:hover{background:rgba(255,215,0,.25);transform:scale(1.05)}
-.buzz-btn.live:active{transform:scale(.92);background:rgba(255,215,0,.35)}
-@keyframes buzzpulse{0%,100%{box-shadow:0 0 0 0 rgba(255,215,0,.3)}50%{box-shadow:0 0 20px 4px rgba(255,215,0,.2)}}
-.buzz-key{display:block;font-size:.8rem;opacity:.5;margin-top:.3rem;font-family:'Libre Franklin',sans-serif}
-.buzz-miss{font-family:'Oswald',sans-serif;font-size:1.2rem;color:var(--timeout-amber);margin-top:.8rem}
-/* Final */
-.final-banner{text-align:center;background:linear-gradient(135deg,var(--deep-blue),#2d0a4e);padding:1.5rem;border-radius:10px;margin-bottom:1.5rem;border:2px solid var(--gold)}
-.final-banner h1{font-family:'Corben',cursive;font-size:2rem;color:var(--bright-gold)}
-.final-banner h2{font-family:'Oswald',sans-serif;font-size:1.2rem;color:rgba(255,255,255,.7);margin-top:.3rem}
-.winner-box{text-align:center;padding:1.5rem;margin:1.5rem 0;background:linear-gradient(135deg,var(--gold),#c4922e);border-radius:10px}
-.winner-box h1{font-family:'Corben',cursive;font-size:1.8rem;color:var(--deep-blue)}
-.hs-list{list-style:none;margin:1rem 0}
-.hs-entry{display:flex;align-items:center;padding:.5rem .8rem;font-family:'Oswald',sans-serif;font-size:1.05rem;border-bottom:1px solid rgba(255,255,255,.08);gap:.5rem}
-.hs-entry:nth-child(1) .hs-rank{color:var(--bright-gold)}.hs-entry:nth-child(2) .hs-rank{color:#C0C0C0}.hs-entry:nth-child(3) .hs-rank{color:#CD7F32}
-.hs-rank{min-width:28px}.hs-name{flex:1}.hs-score{color:var(--bright-gold);min-width:80px;text-align:right}.hs-date{font-size:.8rem;color:rgba(255,255,255,.3);min-width:70px;text-align:right}
-.hs-del{opacity:0;transition:opacity .15s}.hs-entry:hover .hs-del{opacity:1}
-.admin-bar{display:none;margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,.1);text-align:center}.admin-bar.show{display:block}
-.splash{display:none;position:fixed;inset:0;z-index:200;background:var(--deep-blue);justify-content:center;align-items:center;flex-direction:column}
-.splash h1{font-family:'Corben',cursive;font-size:3rem;color:var(--bright-gold);text-shadow:0 0 40px rgba(215,166,67,.5)}
-.splash p{font-family:'Oswald',sans-serif;font-size:1.3rem;color:rgba(255,255,255,.6);margin-top:.5rem}
-.footer{text-align:center;padding:1.5rem 1rem;font-size:.8rem;color:rgba(255,255,255,.3);line-height:1.6}
-@media(max-width:700px){.header-title{font-size:2.2rem;letter-spacing:3px}.cat-head{font-size:.7rem;padding:.5rem .2rem;min-height:50px}.cell-val{font-size:1.2rem}.cell{min-height:44px;padding:.6rem .2rem}.modal{padding:1.3rem}.modal-q{font-size:1.1rem}.header-controls{top:.5rem;right:.5rem}.buzz-btn{padding:1rem 1.5rem;font-size:1.2rem;min-width:130px}}
+.mq{font-size:1.3rem;line-height:1.6;margin:1.2rem 0;color:var(--wh)}
+.cs{display:flex;flex-direction:column;gap:.6rem}
+.cc{display:block;width:100%;padding:.85rem 1rem;font-family:'Libre Franklin',sans-serif;font-size:1.05rem;text-align:left;background:rgba(255,255,255,.06);color:var(--wh);border:2px solid rgba(255,255,255,.12);border-radius:8px;cursor:pointer;transition:all .15s}
+.cc:hover{background:rgba(255,255,255,.12);border-color:rgba(215,166,67,.4)}
+.cc.pk{background:rgba(215,166,67,.15);border-color:var(--gd)}
+.cc.rt{background:rgba(39,174,96,.2);border-color:var(--ok)}
+.cc.wp{background:rgba(192,57,43,.2);border-color:var(--no)}
+.cc[disabled]{cursor:default;opacity:.85}
+.fb{display:none;padding:1rem;border-radius:8px;font-family:'Oswald',sans-serif;font-size:1.3rem;text-align:center;margin-top:1rem}
+.fb.fc{background:rgba(39,174,96,.2);border:2px solid var(--ok);color:#2ecc71}
+.fb.fw{background:rgba(192,57,43,.2);border:2px solid var(--no);color:#e74c3c}
+.fb.ft{background:rgba(212,160,23,.2);border:2px solid var(--to);color:#f1c40f}
+.ex{display:none;background:rgba(0,0,0,.25);border-left:4px solid var(--gd);padding:.85rem 1rem;margin-top:.8rem;border-radius:0 8px 8px 0;font-size:.95rem;line-height:1.5;color:rgba(255,255,255,.85)}
+.wa{display:none;text-align:center;margin:1.5rem 0}
+.wf{font-family:'Oswald',sans-serif;font-size:2rem;width:180px;text-align:center;padding:.5rem;border:3px solid var(--gd);border-radius:8px;background:rgba(0,0,0,.3);color:var(--bg)}
+.wh{font-size:.9rem;color:rgba(255,255,255,.5);margin-top:.5rem}
+.ba{display:none;text-align:center;margin:1.5rem 0}
+.bst{font-family:'Oswald',sans-serif;font-size:1.4rem;color:var(--bg);margin-bottom:.5rem}
+.bcd{font-family:'Corben',cursive;font-size:2.5rem;color:var(--bg);margin:.5rem 0}
+.bbs{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:.8rem}
+.bbtn{font-family:'Oswald',sans-serif;font-size:1.4rem;padding:1.2rem 2.5rem;background:rgba(255,215,0,.08);border:3px solid rgba(255,215,0,.3);color:rgba(255,255,255,.4);border-radius:12px;cursor:default;transition:all .15s;min-width:160px;-webkit-tap-highlight-color:transparent;user-select:none;touch-action:manipulation}
+.bbtn.lv{background:rgba(255,215,0,.12);border-color:var(--gd);color:var(--bg);cursor:pointer;animation:bp 1s ease-in-out infinite}
+.bbtn.lv:hover{background:rgba(255,215,0,.25);transform:scale(1.05)}
+.bbtn.lv:active{transform:scale(.92);background:rgba(255,215,0,.35)}
+@keyframes bp{0%,100%{box-shadow:0 0 0 0 rgba(255,215,0,.3)}50%{box-shadow:0 0 20px 4px rgba(255,215,0,.2)}}
+.bk{display:block;font-size:.8rem;opacity:.5;margin-top:.3rem;font-family:'Libre Franklin',sans-serif}
+.bm{font-family:'Oswald',sans-serif;font-size:1.2rem;color:var(--to);margin-top:.8rem}
+.fnb{text-align:center;background:linear-gradient(135deg,var(--db),#2d0a4e);padding:1.5rem;border-radius:10px;margin-bottom:1.5rem;border:2px solid var(--gd)}
+.fnb h1{font-family:'Corben',cursive;font-size:2rem;color:var(--bg)}
+.fnb h2{font-family:'Oswald',sans-serif;font-size:1.2rem;color:rgba(255,255,255,.7);margin-top:.3rem}
+.wb{text-align:center;padding:1.5rem;margin:1.5rem 0;background:linear-gradient(135deg,var(--gd),#c4922e);border-radius:10px}
+.wb h1{font-family:'Corben',cursive;font-size:1.8rem;color:var(--db)}
+.hl{list-style:none;margin:1rem 0}
+.he{display:flex;align-items:center;padding:.5rem .8rem;font-family:'Oswald',sans-serif;font-size:1.05rem;border-bottom:1px solid rgba(255,255,255,.08);gap:.5rem}
+.he:nth-child(1) .hr{color:var(--bg)}.he:nth-child(2) .hr{color:#C0C0C0}.he:nth-child(3) .hr{color:#CD7F32}
+.hr{min-width:28px}.hn{flex:1}.hs{color:var(--bg);min-width:80px;text-align:right}.hd2{font-size:.8rem;color:rgba(255,255,255,.3);min-width:70px;text-align:right}
+.hdl{opacity:0;transition:opacity .15s}.he:hover .hdl{opacity:1}
+.ab{display:none;margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,.1);text-align:center}.ab.sh{display:block}
+.spl{display:none;position:fixed;inset:0;z-index:200;background:var(--db);justify-content:center;align-items:center;flex-direction:column}
+.spl h1{font-family:'Corben',cursive;font-size:3rem;color:var(--bg);text-shadow:0 0 40px rgba(215,166,67,.5)}
+.spl p{font-family:'Oswald',sans-serif;font-size:1.3rem;color:rgba(255,255,255,.6);margin-top:.5rem}
+.ft{text-align:center;padding:1.5rem 1rem;font-size:.8rem;color:rgba(255,255,255,.3);line-height:1.6}
+@media(max-width:700px){.hd h1{font-size:2.2rem;letter-spacing:3px}.ch{font-size:.65rem;padding:.4rem .2rem;min-height:48px}.cv{font-size:1.1rem}.cl{min-height:42px;padding:.5rem .2rem}.md{padding:1.3rem}.mq{font-size:1.1rem}.hd-ctrl{top:.5rem;right:.5rem}.bbtn{padding:.9rem 1.5rem;font-size:1.1rem;min-width:120px}}
 </style>
 </head>
 <body>
-<header class="header">
-<div class="header-controls"><button class="text-btn" onclick="showHS()">🏆 Scores</button><button class="icon-btn" id="muteBtn" onclick="toggleMute()" title="Toggle sound">🔊</button></div>
-<div class="header-title">JeoPDE!</div><div class="header-sub">Programmed DNA Elimination</div><div class="header-dna">🧬 ✂️ 🧬</div>
+<header class="hd">
+<div class="hd-ctrl"><button class="tb" onclick="showHS()">🏆 Scores</button><button class="ib" id="muteBtn" onclick="toggleMute()">🔊</button></div>
+<h1>JeoPDE!</h1><div class="hd-sub">Programmed DNA Elimination</div><div class="hd-dna">🧬 ✂️ 🧬</div>
 </header>
-<div class="container">
-<div id="setupCard" class="setup-card"><h2>🧬 ✂️ Player Setup</h2><p>Select number of players:</p><div class="player-btns"><button class="btn btn-blue" onclick="pickCount(1)" id="pc1">1 Player</button><button class="btn btn-blue" onclick="pickCount(2)" id="pc2">2 Players</button><button class="btn btn-blue" onclick="pickCount(3)" id="pc3">3 Players</button></div><div id="nameArea"></div><button class="btn btn-gold" id="goBtn" style="display:none;margin-top:1rem" onclick="startGame()">Start Game</button></div>
-<div class="scoreboard" id="scoreboard"></div>
-<div class="round-bar" id="roundBar"><div class="round-label" id="roundLabel"><span>JeoPDE!</span> — Round 1</div><button class="btn btn-sm" id="skipBtn" onclick="skipRound()">Skip to Round 2 ▸</button></div>
-<div class="board" id="board"></div>
+<div class="ct">
+<div id="setup" class="sc"><h2>🧬 ✂️ Player Setup</h2><p>Select number of players:</p><div class="pb"><button class="bn bb" onclick="pickCount(1)" id="pc1">1 Player</button><button class="bn bb" onclick="pickCount(2)" id="pc2">2 Players</button><button class="bn bb" onclick="pickCount(3)" id="pc3">3 Players</button></div><div id="nameArea"></div><button class="bn bg" id="goBtn" style="display:none;margin-top:1rem" onclick="startGame()">Start Game</button></div>
+<div class="sb" id="scoreboard"></div>
+<div class="rb" id="roundBar"><div class="rl" id="roundLabel"><span>JeoPDE!</span> — Round 1</div><button class="bn bs" id="skipBtn" onclick="skipRound()">Skip to Round 2 ▸</button></div>
+<div class="bw"><div class="bd-grid" id="board"></div></div>
 </div>
-<div class="overlay" id="qOverlay"><div class="modal">
-<div class="timer-strip" id="timerStrip"><span class="timer-label" id="timerLabel">30</span><div class="timer-track"><div class="timer-fill" id="timerFill"></div></div></div>
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem"><span class="modal-value" id="mValue"></span><span class="dd-badge" id="ddBadge">🎯 DAILY DOUBLE</span></div>
-<div class="modal-q" id="mQuestion"></div>
-<div class="buzz-area" id="buzzArea">
-<div class="buzz-status" id="buzzStatus">📖 Read the clue...</div>
-<div class="buzz-countdown" id="buzzCountdown"></div>
-<div class="buzz-btns" id="buzzBtns"></div>
-<div class="buzz-miss" id="buzzMiss" style="display:none"></div>
-</div>
-<div class="wager-area" id="wagerArea"><p style="font-family:'Oswald',sans-serif;font-size:1.2rem;margin-bottom:.8rem">Enter your wager:</p><input type="number" class="wager-field" id="wagerField" min="0" value="0"><p class="wager-hint" id="wagerHint"></p><button class="btn btn-gold" style="margin-top:1rem" onclick="lockWager()">Confirm Wager</button></div>
-<div class="choices" id="mChoices"></div>
-<button class="btn btn-gold" id="lockBtn" style="display:none;margin-top:1rem" onclick="lockAnswer()">Lock In</button>
-<div class="feedback-box" id="fbBox"></div><div class="explain-box" id="expBox"></div>
-<button class="btn btn-sm" id="contBtn" style="display:none;margin-top:1rem" onclick="closeQ()">Continue</button>
+<div class="ov" id="qOv"><div class="md">
+<div class="ts" id="tStrip"><span class="tl" id="tLbl">30</span><div class="tt"><div class="tf" id="tFill"></div></div></div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem"><span class="mv" id="mVal"></span><span class="dd" id="ddBdg">🎯 DAILY DOUBLE</span></div>
+<div class="mq" id="mQ"></div>
+<div class="ba" id="buzzA"><div class="bst" id="buzzSt">📖 Read the clue...</div><div class="bcd" id="buzzCd"></div><div class="bbs" id="buzzBs"></div><div class="bm" id="buzzM" style="display:none"></div></div>
+<div class="wa" id="wagA"><p style="font-family:'Oswald',sans-serif;font-size:1.2rem;margin-bottom:.8rem">Enter your wager:</p><input type="number" class="wf" id="wagF" min="0" value="0"><p class="wh" id="wagH"></p><button class="bn bg" style="margin-top:1rem" onclick="lockWager()">Confirm Wager</button></div>
+<div class="cs" id="mCs"></div>
+<button class="bn bg" id="lockBtn" style="display:none;margin-top:1rem" onclick="lockAnswer()">Lock In</button>
+<div class="fb" id="fbBox"></div><div class="ex" id="exBox"></div>
+<button class="bn bs" id="contBtn" style="display:none;margin-top:1rem" onclick="closeQ()">Continue</button>
 </div></div>
-<div class="overlay" id="finalOverlay"><div class="modal">
-<div class="final-banner"><h1>🏆 Final JeoPDE! 🏆</h1><h2 id="finalCat"></h2></div>
-<div id="fWagerSec"><p style="font-family:'Oswald',sans-serif;font-size:1.1rem;margin-bottom:1rem">Place your wagers:</p><div id="fWagerInputs"></div><button class="btn btn-gold" style="margin-top:1rem" onclick="revealFinal()">Submit Wagers &amp; Reveal</button></div>
-<div id="fQuestionSec" style="display:none"><div class="modal-q" id="fqText" style="background:rgba(0,0,0,.2);padding:1.2rem;border-radius:8px;border:2px solid var(--gold)"></div><div id="fChoicesArea"></div><button class="btn btn-gold" style="margin-top:1rem" onclick="submitFinal()">Submit Final Answers</button></div>
-<div id="fResultSec" style="display:none"><div id="fScores" style="margin:1rem 0"></div><div class="explain-box" id="fExp" style="display:block"></div><div class="winner-box"><h1 id="winnerText"></h1></div><button class="btn btn-gold" onclick="location.reload()">New Game</button></div>
+<div class="ov" id="finOv"><div class="md">
+<div class="fnb"><h1>🏆 Final JeoPDE! 🏆</h1><h2 id="finCat"></h2></div>
+<div id="fWSec"><p style="font-family:'Oswald',sans-serif;font-size:1.1rem;margin-bottom:1rem">Place your wagers:</p><div id="fWIn"></div><button class="bn bg" style="margin-top:1rem" onclick="revealFinal()">Submit Wagers &amp; Reveal</button></div>
+<div id="fQSec" style="display:none"><div class="mq" id="fqTxt" style="background:rgba(0,0,0,.2);padding:1.2rem;border-radius:8px;border:2px solid var(--gd)"></div><div id="fCArea"></div><button class="bn bg" style="margin-top:1rem" onclick="submitFinal()">Submit Final Answers</button></div>
+<div id="fRSec" style="display:none"><div id="fScr" style="margin:1rem 0"></div><div class="ex" id="fEx" style="display:block"></div><div class="wb"><h1 id="winTxt"></h1></div><button class="bn bg" onclick="location.reload()">New Game</button></div>
 </div></div>
-<div class="overlay" id="hsOverlay"><div class="modal" style="max-width:480px">
-<h2 style="font-family:'Oswald',sans-serif;color:var(--bright-gold);text-align:center;margin-bottom:.5rem">🏆 Leaderboard</h2>
-<p id="hsStatus" style="text-align:center;font-size:.85rem;color:rgba(255,255,255,.4);margin-bottom:.5rem"></p>
-<ul class="hs-list" id="hsList"></ul>
-<div style="text-align:center;margin-top:1rem"><button class="btn btn-gold" style="padding:.6rem 1.5rem;font-size:1rem" onclick="document.getElementById('hsOverlay').style.display='none'">Close</button></div>
-<div class="admin-bar" id="adminBar"><p style="font-family:'Oswald',sans-serif;font-size:.9rem;color:var(--gold);margin-bottom:.5rem">🔒 Admin</p><button class="btn-danger" onclick="adminClearAll()">Clear All Scores</button></div>
-<div style="text-align:center;margin-top:.8rem"><button class="text-btn" style="font-size:.7rem" onclick="toggleAdmin()">Admin</button></div>
+<div class="ov" id="hsOv"><div class="md" style="max-width:480px">
+<h2 style="font-family:'Oswald',sans-serif;color:var(--bg);text-align:center;margin-bottom:.5rem">🏆 Leaderboard</h2>
+<p id="hsSt" style="text-align:center;font-size:.85rem;color:rgba(255,255,255,.4);margin-bottom:.5rem"></p>
+<ul class="hl" id="hsLst"></ul>
+<div style="text-align:center;margin-top:1rem"><button class="bn bg" style="padding:.6rem 1.5rem;font-size:1rem" onclick="document.getElementById('hsOv').style.display='none'">Close</button></div>
+<div class="ab" id="admBar"><p style="font-family:'Oswald',sans-serif;font-size:.9rem;color:var(--gd);margin-bottom:.5rem">🔒 Admin</p><button class="bd" onclick="admClear()">Clear All Scores</button></div>
+<div style="text-align:center;margin-top:.8rem"><button class="tb" style="font-size:.7rem" onclick="togAdmin()">Admin</button></div>
 </div></div>
-<div class="splash" id="splash"></div>
-<footer class="footer">Created by <strong>James Ryan Simmons, PhD</strong> · University of Tennessee, Knoxville<br>🧬 JeoPDE! — Built for PDE researchers, students, and the scientifically curious</footer>
+<div class="spl" id="splash"></div>
+<footer class="ft">Created by <strong>James Ryan Simmons, PhD</strong> · University of Tennessee, Knoxville<br>🧬 JeoPDE! — Built for PDE researchers, students, and the scientifically curious</footer>
 <script>
-// === FIREBASE CONFIG ===
-// Replace with your Firebase config. See README for setup instructions.
-const FIREBASE_CONFIG={apiKey:"YOUR_API_KEY",authDomain:"YOUR_PROJECT.firebaseapp.com",databaseURL:"https://YOUR_PROJECT-default-rtdb.firebaseio.com",projectId:"YOUR_PROJECT",storageBucket:"YOUR_PROJECT.appspot.com",messagingSenderId:"000000000000",appId:"YOUR_APP_ID"};
-const ADMIN_PASS="pde2026"; // Change this
-let db=null,useFirebase=false;
-try{if(!FIREBASE_CONFIG.apiKey.startsWith("YOUR_")){firebase.initializeApp(FIREBASE_CONFIG);db=firebase.database();useFirebase=true}}catch(e){console.warn("Firebase not configured:",e)}
-
-// === HIGH SCORES ===
-const HSK='jeopde_highscores';
-function saveScore(n,s){const e={name:n,score:s,date:new Date().toLocaleDateString(),ts:Date.now()};if(useFirebase)db.ref('scores').push(e);else{const l=getLS();l.push(e);l.sort((a,b)=>b.score-a.score);localStorage.setItem(HSK,JSON.stringify(l.slice(0,30)))}}
+// === FIREBASE ===
+const FBC={apiKey:"YOUR_API_KEY",authDomain:"YOUR_PROJECT.firebaseapp.com",databaseURL:"https://YOUR_PROJECT-default-rtdb.firebaseio.com",projectId:"YOUR_PROJECT",storageBucket:"YOUR_PROJECT.appspot.com",messagingSenderId:"0",appId:"YOUR_APP_ID"};
+const ADMIN_PASS="pde2026";
+let db=null,useFB=false;
+try{if(!FBC.apiKey.startsWith("YOUR_")){firebase.initializeApp(FBC);db=firebase.database();useFB=true}}catch(e){}
+const HSK='jeopde_hs';
+function saveScr(n,s){const e={name:n,score:s,date:new Date().toLocaleDateString(),ts:Date.now()};if(useFB)db.ref('scores').push(e);else{const l=getLS();l.push(e);l.sort((a,b)=>b.score-a.score);localStorage.setItem(HSK,JSON.stringify(l.slice(0,30)))}}
 function getLS(){try{return JSON.parse(localStorage.getItem(HSK))||[]}catch(e){return[]}}
-function showHS(){const el=document.getElementById('hsList'),st=document.getElementById('hsStatus');document.getElementById('adminBar').classList.remove('show');if(useFirebase){st.textContent='Loading...';db.ref('scores').orderByChild('score').limitToLast(30).once('value',snap=>{const e=[];snap.forEach(c=>{e.push({key:c.key,...c.val()})});e.sort((a,b)=>b.score-a.score);renderHS(e,true);st.textContent='🌐 Shared leaderboard'}).catch(()=>{renderHS(getLS(),false);st.textContent='📱 Local scores'})}else{renderHS(getLS(),false);st.textContent='📱 Local scores'}document.getElementById('hsOverlay').style.display='block'}
-function renderHS(l,fb){const el=document.getElementById('hsList');if(!l.length){el.innerHTML='<li class="hs-entry" style="justify-content:center;opacity:.5">No scores yet</li>';return}el.innerHTML=l.map((h,i)=>`<li class="hs-entry"><span class="hs-rank">${i+1}.</span><span class="hs-name">${h.name}</span><span class="hs-score">$${(h.score||0).toLocaleString()}</span><span class="hs-date">${h.date||''}</span>${fb&&h.key?`<button class="btn-danger hs-del" onclick="adminDel('${h.key}')">✕</button>`:''}</li>`).join('')}
-let adminMode=false;
-function toggleAdmin(){if(!adminMode){const pw=prompt('Admin password:');if(pw!==ADMIN_PASS){alert('Wrong password.');return}adminMode=true}document.getElementById('adminBar').classList.toggle('show')}
-function adminClearAll(){if(!confirm('Delete ALL scores?'))return;if(useFirebase)db.ref('scores').remove().then(()=>showHS());else{localStorage.removeItem(HSK);showHS()}}
-function adminDel(k){if(!adminMode)return;if(!confirm('Delete this entry?'))return;if(useFirebase)db.ref('scores/'+k).remove().then(()=>showHS())}
-
-// === QUESTION BANK ===
-const Q={
-round1:{
-"Elimin-8 or Not":{100:{q:"This process in nematodes permanently removes germline-specific sequences from somatic cells.",c:["What is programmed DNA elimination?","What is DNA repair?","What is chromosome duplication?","What is methylation?"],a:0,exp:"PDE removes germline-specific sequences from somatic cells."},200:{q:"PDE is not random but consistently eliminates these in every developmental cycle.",c:["What are telomeres?","What are the same DNA sequences?","What are all introns?","What are random mutations?"],a:1,exp:"PDE is tightly regulated — the same sequences are eliminated each cycle."},300:{q:"Unlike apoptosis, PDE removes DNA without triggering this cellular response.",c:["What is cell death?","What is inflammation?","What is immune activation?","What is DNA damage response?"],a:0,exp:"PDE precisely removes DNA while the cell survives and divides."},400:{q:"In Ascaris, approximately this percentage of the germline genome is eliminated.",c:["What is ~5%?","What is ~15%?","What is ~25%?","What is ~50%?"],a:2,exp:"About 25% of the Ascaris germline genome is eliminated."},500:{q:"PDE was first described in this organism by Theodor Boveri in the 1880s.",c:["What is C. elegans?","What is Drosophila?","What is Parascaris (Ascaris)?","What is sea urchin?"],a:2,exp:"Boveri discovered chromatin diminution in Parascaris equorum."}},
-"Chromosomal Shenanigans":{100:{q:"Parascaris univalens has this many germline chromosomes.",c:["What is 1?","What is 2?","What is 24?","What is 36?"],a:0,exp:"P. univalens has a single germline chromosome."},200:{q:"After PDE, both Ascaris and Parascaris produce this many somatic chromosomes.",c:["What is 12?","What is 24?","What is 36?","What is 48?"],a:2,exp:"Despite different germline karyotypes (24 vs 1), both converge on 36 somatic chromosomes."},300:{q:"These structures are added to new chromosome ends after PDE breaks.",c:["What are centromeres?","What are telomeres?","What are origins of replication?","What are enhancers?"],a:1,exp:"De novo telomere addition heals broken chromosome ends."},400:{q:"Ascaris has this many germline chromosomes before PDE.",c:["What is 1?","What is 12?","What is 24?","What is 48?"],a:2,exp:"Ascaris has 24 germline chromosomes that fragment into 36 somatic chromosomes."},500:{q:"Convergent production of 36 somatic chromosomes from different karyotypes suggests this type of evolutionary pressure.",c:["What is neutral drift?","What is purifying/stabilizing selection?","What is sexual selection?","What is genetic drift?"],a:1,exp:"Conserved outcome despite divergent starting points indicates strong selective constraint."}},
-"Germline vs Soma":{100:{q:"PDE occurs exclusively in this cell lineage, sparing the other.",c:["What is soma (sparing germline)?","What is germline (sparing soma)?","What is both equally?","What is neural lineage?"],a:0,exp:"PDE removes DNA from somatic cells while preserving the complete germline genome."},200:{q:"In Ascaris, PDE initiates at this early embryonic stage.",c:["What is the 2-cell stage?","What is the 4-cell stage?","What is the 8-cell stage?","What is the 16-cell stage?"],a:1,exp:"PDE begins at the 4-cell stage."},300:{q:"These repetitive DNA elements make up the majority of eliminated sequences.",c:["What are satellite repeats?","What are tRNAs?","What are rRNAs?","What are SINEs only?"],a:0,exp:"Satellite and other repetitive DNA elements constitute most eliminated material."},400:{q:"Eliminated regions in Ascaris are enriched for these histone modifications.",c:["What are activating marks (H3K4me3)?","What are repressive marks (H3K9me3)?","What are bivalent marks?","What are acetylation marks?"],a:1,exp:"Eliminated regions are enriched for repressive marks like H3K9me3."},500:{q:"PDE may have evolved as an extreme mechanism for this biological process.",c:["What is DNA replication?","What is gene regulation / silencing?","What is recombination?","What is cell migration?"],a:1,exp:"PDE is an extreme form of gene silencing — physically removing DNA."}},
-"Model Organisms":{100:{q:"This model nematode does NOT undergo PDE.",c:["What is Ascaris?","What is C. elegans?","What is Parascaris?","What is Oscheius?"],a:1,exp:"C. elegans does not undergo PDE."},200:{q:"PDE has been described in nematodes, copepods, lampreys, and these jawless fish.",c:["What are hagfish?","What are zebrafish?","What are hydra?","What are ciliates?"],a:0,exp:"Hagfish are among vertebrates with PDE."},300:{q:"Oscheius tipulae is valuable for PDE research because it is free-living and amenable to these techniques.",c:["What is genetic transformation?","What is CRISPR?","What is both?","What is RNAi only?"],a:2,exp:"O. tipulae is lab-tractable unlike parasitic nematodes."},400:{q:"In lampreys, PDE eliminates approximately this fraction of the germline genome.",c:["What is ~5%?","What is ~20%?","What is ~50%?","What is ~75%?"],a:1,exp:"Lampreys eliminate roughly 20% of germline DNA."},500:{q:"Unlike Ascaris PDE in early embryos, ciliate PDE occurs during this process.",c:["What is conjugation?","What is binary fission?","What is budding?","What is encystment?"],a:0,exp:"In ciliates, DNA elimination occurs during macronuclear development after conjugation."}},
-"PDE Mechanisms":{100:{q:"DNA breaks during PDE occur at specific sites called these.",c:["What are CBRs?","What are fragile sites?","What are hot spots?","What are splice sites?"],a:0,exp:"Chromosomal Breakage Regions are where DNA breaks occur during PDE."},200:{q:"After PDE breaks, chromosome ends are healed by this enzyme.",c:["What is DNA polymerase?","What is telomerase?","What is ligase?","What is helicase?"],a:1,exp:"Telomerase adds telomeric repeats to new chromosome ends."},300:{q:"Hi-C data shows CBRs form 3D interactions, suggesting breaks are guided by this.",c:["What is spatial organization?","What is random collision?","What is transcription?","What is DNA methylation?"],a:0,exp:"3D proximity of CBRs suggests spatial organization guides the break process."},400:{q:"CBR interactions forming before PDE initiates suggests the break mechanism is this.",c:["What is sequence-dependent?","What is predetermined/programmed?","What is random?","What is error-prone?"],a:1,exp:"Pre-formed CBR interactions indicate a programmed mechanism."},500:{q:"Despite millions of years of divergence, Ascaris and Parascaris CBRs show this remarkable property.",c:["What is identical DNA sequence?","What is conserved spatial positioning?","What is random distribution?","What is telomeric sequence?"],a:1,exp:"CBRs show conserved 3D spatial organization despite sequence divergence."}}
-},
-round2:{
-"Hi-C & 3D Genome":{200:{q:"Hi-C measures these types of interactions between genomic loci.",c:["What are protein-protein interactions?","What are 3D chromatin contacts?","What are genetic interactions?","What are RNA-DNA interactions?"],a:1,exp:"Hi-C captures chromatin conformation via proximity-based ligation."},400:{q:"This Hi-C normalization method corrects for systematic biases.",c:["What is ICE?","What is RPKM?","What is quantile normalization?","What is Z-score?"],a:0,exp:"ICE removes biases from GC content, mappability, and fragment length."},600:{q:"A/B compartments from Hi-C correspond to these chromatin states.",c:["What are active (A) and inactive (B)?","What are coding (A) and noncoding (B)?","What are euchromatin (A) and centromere (B)?","What are replicated (A) and unreplicated (B)?"],a:0,exp:"A = active/open chromatin; B = inactive/closed."},800:{q:"Insulation scores identify boundaries of these self-interacting domains.",c:["What are TADs?","What are operons?","What are chromosomal territories?","What are replication domains?"],a:0,exp:"TAD boundaries show high insulation scores."},1000:{q:"Saddle plots quantify interaction strength between regions sorted by this value.",c:["What is gene expression?","What is eigenvector/compartment score?","What is GC content?","What is replication timing?"],a:1,exp:"Saddle plots use eigenvector-ranked regions."}},
-"CBRs & Breaks":{200:{q:"CBR stands for this.",c:["What is Chromosomal Breakage Region?","What is Chromatin Binding Region?","What is Condensed Bridge Region?","What is Centromeric Break Region?"],a:0,exp:"Chromosomal Breakage Regions."},400:{q:"Ascaris has approximately this many CBRs.",c:["What is ~10?","What is ~25?","What is ~44?","What is ~100?"],a:2,exp:"About 44 CBRs in the Ascaris germline genome."},600:{q:"CBR trans-interactions across chromosomes suggest this.",c:["What is a shared nuclear compartment?","What is random diffusion?","What is chromosome fusion?","What is transposition?"],a:0,exp:"CBRs may cluster in a shared nuclear space before PDE."},800:{q:"The telomeric repeat added after PDE in Ascaris is this.",c:["What is TTAGGC?","What is TTAGGG?","What is TTAAGG?","What is TTAGCC?"],a:0,exp:"TTAGGC is the Ascaris telomeric repeat."},1000:{q:"CBR spatial clustering before elimination suggests the break mechanism does NOT require this.",c:["What is specific DNA sequence recognition?","What is ATP?","What is cell division?","What is transcription?"],a:0,exp:"Structure-based, not sequence-based, mechanism."}},
-"Comparative Genomics":{200:{q:"Ascaris and Parascaris diverged approximately this many million years ago.",c:["What is ~10 MYA?","What is ~30 MYA?","What is ~50 MYA?","What is ~100 MYA?"],a:2,exp:"~50 million years of divergence with conserved PDE outcomes."},400:{q:"Despite different karyotypes, Ascaris and Parascaris somatic genomes show conserved organization of these.",c:["What are A/B compartments?","What are centromere positions?","What are intron sizes?","What are transposon families?"],a:0,exp:"A/B compartment patterns are conserved."},600:{q:"Parascaris is especially useful for studying this aspect of PDE.",c:["What is how breaks create chromosomes from a single molecule?","What is telomere biology?","What is DNA repair?","What is gene regulation?"],a:0,exp:"One chromosome fragmented into 36."},800:{q:"PDE genome assemblies often require this technology.",c:["What is long-read sequencing (PacBio/ONT)?","What is Sanger?","What is microarray?","What is short-read only?"],a:0,exp:"Long reads span repetitive eliminated regions."},1000:{q:"Conservation of 36 somatic chromosomes despite different germline karyotypes is evidence for this.",c:["What is convergent evolution?","What is divergent evolution?","What is neutral evolution?","What is genetic drift?"],a:0,exp:"Convergent evolution."}},
-"Epigenetic Marks":{200:{q:"This histone mark is depleted in eliminated regions.",c:["What is H3K4me3?","What is H3K9me3?","What is H3K27me3?","What is H4K20me3?"],a:0,exp:"H3K4me3 marks active promoters, absent from eliminated regions."},400:{q:"ATAC-seq measures this property of chromatin.",c:["What is accessibility?","What is methylation?","What is replication timing?","What is histone modification?"],a:0,exp:"ATAC-seq identifies open chromatin."},600:{q:"Eliminated regions are enriched for this repressive modification.",c:["What is H3K4me3?","What is H3K36me3?","What is H3K9me3?","What is H3K4me1?"],a:2,exp:"H3K9me3 marks eliminated heterochromatin."},800:{q:"A compartments correlate with these epigenetic features.",c:["What are active marks and open chromatin?","What are repressive marks?","What are no modifications?","What is DNA methylation only?"],a:0,exp:"Active marks, ATAC-seq signal, and gene expression."},1000:{q:"Combining Hi-C, ChIP-seq, ATAC-seq, and RNA-seq is an example of this.",c:["What is multi-omics integration?","What is single-cell analysis?","What is population genetics?","What is phylogenomics?"],a:0,exp:"Multi-omics integration."}},
-"Evolution of PDE":{200:{q:"PDE evolved independently in nematodes, copepods, lampreys, hagfish, and ciliates.",c:["What is convergent evolution?","What is co-evolution?","What is adaptive radiation?","What is genetic drift?"],a:0,exp:"PDE arose independently across diverse lineages."},400:{q:"One PDE hypothesis involves silencing these harmful genomic elements.",c:["What are transposable elements?","What are tumor suppressors?","What are housekeeping genes?","What are ribosomal genes?"],a:0,exp:"PDE may silence transposons and repeats."},600:{q:"PDE may have evolved for genome size reduction to achieve this.",c:["What is faster cell division?","What is larger cell size?","What is more gene copies?","What is increased mutation?"],a:0,exp:"Smaller genomes allow faster S-phase."},800:{q:"Eliminated DNA being mostly repetitive supports PDE as a form of this.",c:["What is genome defense?","What is gene duplication?","What is recombination?","What is mutagenesis?"],a:0,exp:"Genome defense: removing parasitic DNA."},1000:{q:"Independent PDE evolution with conserved outcomes exemplifies this principle.",c:["What is constrained convergence?","What is random chance?","What is horizontal gene transfer?","What is founder effect?"],a:0,exp:"Functional requirements drive convergent solutions."}}
-},
-final:[
-{cat:"The Ultimate PDE Question",q:"Boveri's 1887 observation that only specific cells lose chromatin led him to propose this fundamental concept.",c:["What is the chromosome theory of inheritance?","What is the central dogma?","What is epigenetics?","What is cell fate determination?"],a:0,exp:"Boveri's chromatin diminution work established that chromosomes carry hereditary information."},
-{cat:"Genome Architecture",q:"Conserved A/B compartment patterns between species separated by ~50MY despite different karyotypes suggests this.",c:["What is that compartmentalization is functionally constrained?","What is that compartments are random?","What is that chromosome number determines compartments?","What is that compartments drift neutrally?"],a:0,exp:"Conservation despite divergence = functional constraint on 3D genome organization."},
-{cat:"Cutting Edge PDE",q:"If CBRs interact in 3D space independently of DNA sequence, the most likely mediating component is this.",c:["What are proteins/protein complexes?","What is RNA?","What is lipid membrane?","What is DNA sequence homology?"],a:0,exp:"Protein-mediated interactions bring loci together independent of sequence."},
-{cat:"PDE Across Life",q:"Independent PDE evolution from ciliates to vertebrates achieving similar outcomes is best explained by this.",c:["What is convergent evolution driven by common selective pressure?","What is shared ancestry?","What is horizontal gene transfer?","What is random mutation?"],a:0,exp:"Common selective pressures drove independent PDE origins."}
-]};
+function showHS(){const el=document.getElementById('hsLst'),st=document.getElementById('hsSt');document.getElementById('admBar').classList.remove('sh');if(useFB){st.textContent='Loading...';db.ref('scores').orderByChild('score').limitToLast(30).once('value',s=>{const e=[];s.forEach(c=>{e.push({key:c.key,...c.val()})});e.sort((a,b)=>b.score-a.score);rndrHS(e,1);st.textContent='🌐 Shared leaderboard'}).catch(()=>{rndrHS(getLS(),0);st.textContent='📱 Local scores'})}else{rndrHS(getLS(),0);st.textContent='📱 Local scores'}document.getElementById('hsOv').style.display='block'}
+function rndrHS(l,fb){const el=document.getElementById('hsLst');if(!l.length){el.innerHTML='<li class="he" style="justify-content:center;opacity:.5">No scores yet</li>';return}el.innerHTML=l.map((h,i)=>`<li class="he"><span class="hr">${i+1}.</span><span class="hn">${h.name}</span><span class="hs">$${(h.score||0).toLocaleString()}</span><span class="hd2">${h.date||''}</span>${fb&&h.key?`<button class="bd hdl" onclick="admDel('${h.key}')">✕</button>`:''}</li>`).join('')}
+let admOn=false;
+function togAdmin(){if(!admOn){if(prompt('Admin password:')!==ADMIN_PASS){alert('Wrong.');return}admOn=true}document.getElementById('admBar').classList.toggle('sh')}
+function admClear(){if(!confirm('Delete ALL scores?'))return;if(useFB)db.ref('scores').remove().then(()=>showHS());else{localStorage.removeItem(HSK);showHS()}}
+function admDel(k){if(!admOn)return;if(useFB)db.ref('scores/'+k).remove().then(()=>showHS())}
 
 // === SOUND ===
-let audioCtx=null,muted=false;
-function getAC(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx}
-function toggleMute(){muted=!muted;const b=document.getElementById('muteBtn');b.textContent=muted?'🔇':'🔊';b.classList.toggle('muted',muted)}
-function tone(f,d,t='sine',v=.15,dl=0){if(muted)return;try{const c=getAC(),o=c.createOscillator(),g=c.createGain();o.type=t;o.frequency.value=f;g.gain.setValueAtTime(v,c.currentTime+dl);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+dl+d);o.connect(g);g.connect(c.destination);o.start(c.currentTime+dl);o.stop(c.currentTime+dl+d)}catch(e){}}
-function sfxSelect(){tone(600,.08,'sine',.12);tone(800,.12,'sine',.1,.06)}
-function sfxCorrect(){tone(523,.12,'sine',.15);tone(659,.12,'sine',.15,.1);tone(784,.2,'sine',.15,.2)}
-function sfxWrong(){tone(300,.3,'sawtooth',.1);tone(250,.4,'sawtooth',.08,.15)}
-function sfxTimeout(){tone(400,.15,'triangle',.1);tone(300,.15,'triangle',.1,.15);tone(200,.3,'triangle',.1,.3)}
-function sfxDD(){[392,494,587,659,784].forEach((f,i)=>tone(f,.15,'sine',.13,i*.08))}
-function sfxTick(){tone(1000,.03,'sine',.06)}
-function sfxBuzz(){tone(880,.06,'square',.1);tone(1100,.08,'square',.08,.05)}
-function sfxReveal(){[523,587,659,784,880].forEach((f,i)=>tone(f,.2,'triangle',.1,i*.12))}
-function sfxWin(){[523,659,784,1047,784,1047].forEach((f,i)=>tone(f,.18,'sine',.12,i*.12))}
-function sfxReading(){tone(440,.4,'sine',.05)}
+let aC=null,mut=false;
+function gAC(){if(!aC)aC=new(window.AudioContext||window.webkitAudioContext)();return aC}
+function toggleMute(){mut=!mut;const b=document.getElementById('muteBtn');b.textContent=mut?'🔇':'🔊';b.classList.toggle('mt',mut)}
+function tn(f,d,t='sine',v=.15,dl=0){if(mut)return;try{const c=gAC(),o=c.createOscillator(),g=c.createGain();o.type=t;o.frequency.value=f;g.gain.setValueAtTime(v,c.currentTime+dl);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+dl+d);o.connect(g);g.connect(c.destination);o.start(c.currentTime+dl);o.stop(c.currentTime+dl+d)}catch(e){}}
+function sfxSel(){tn(600,.08);tn(800,.12,'sine',.1,.06)}
+function sfxOk(){tn(523,.12);tn(659,.12,'sine',.15,.1);tn(784,.2,'sine',.15,.2)}
+function sfxNo(){tn(300,.3,'sawtooth',.1);tn(250,.4,'sawtooth',.08,.15)}
+function sfxTo(){tn(400,.15,'triangle',.1);tn(300,.15,'triangle',.1,.15);tn(200,.3,'triangle',.1,.3)}
+function sfxDD(){[392,494,587,659,784].forEach((f,i)=>tn(f,.15,'sine',.13,i*.08))}
+function sfxTk(){tn(1000,.03,'sine',.06)}
+function sfxBz(){tn(880,.06,'square',.1);tn(1100,.08,'square',.08,.05)}
+function sfxRv(){[523,587,659,784,880].forEach((f,i)=>tn(f,.2,'triangle',.1,i*.12))}
+function sfxWn(){[523,659,784,1047,784,1047].forEach((f,i)=>tn(f,.18,'sine',.12,i*.12))}
+
+// =============================================================================
+// QUESTION BANK — 12 categories per round, 5 randomly selected each game
+// =============================================================================
+const Q={
+round1:{
+"Elimin-8 or Not":{
+100:{q:"This process permanently removes specific DNA sequences from somatic cells during development.",c:["What is programmed DNA elimination?","What is DNA repair?","What is chromosome duplication?","What is methylation?"],a:0,exp:"PDE is the targeted, reproducible removal of specific genomic sequences from somatic cells."},
+200:{q:"During nematode PDE, all germline chromosome ends are removed and replaced by these.",c:["What are new centromeres?","What are new telomeres?","What are histones?","What are origins of replication?"],a:1,exp:"All germline chromosome tips are removed and healed with de novo telomere addition."},
+300:{q:"Unlike apoptosis, PDE removes DNA without triggering this cellular response.",c:["What is cell death?","What is inflammation?","What is immune activation?","What is DNA damage response?"],a:0,exp:"PDE precisely removes DNA while the cell survives and divides normally."},
+400:{q:"PDE eliminates both repetitive satellite DNA and approximately this many protein-coding genes in Ascaris.",c:["What is ~100?","What is ~1,000?","What is ~5,000?","What is ~10,000?"],a:1,exp:"About 1,000 germline-expressed genes are eliminated along with repetitive sequences."},
+500:{q:"PDE has now been found in over 100 species from diverse phyla, suggesting it evolved this way.",c:["What is independently/convergently?","What is from a single ancestor?","What is by horizontal transfer?","What is randomly?"],a:0,exp:"PDE's sporadic distribution across diverse taxa indicates multiple independent origins."}},
+"Chromosomal Shenanigans":{
+100:{q:"Parascaris univalens has this remarkably simple germline chromosome number.",c:["What is 1 (2n=2)?","What is 2 (2n=4)?","What is 24?","What is 36?"],a:0,exp:"P. univalens has just one pair of germline chromosomes — the simplest known karyotype for this process."},
+200:{q:"After PDE, both Ascaris and Parascaris produce this many somatic chromosomes.",c:["What is 12?","What is 24?","What is 36?","What is 48?"],a:2,exp:"Despite germline karyotypes of 24 vs 1, both converge on 36 somatic chromosomes."},
+300:{q:"Simmons et al. (2024) showed Parascaris germline chromosomes arose from this process.",c:["What is chromosome fusion?","What is whole genome duplication?","What is transposition?","What is polyploidy?"],a:0,exp:"Ancestral chromosomes fused to create the large germline chromosomes; PDE splits them back."},
+400:{q:"PDE in Parascaris converts this germline sex-determination system into XX/XO in somatic cells.",c:["What is XX/XY?","What is ZW/ZZ?","What is X0/XX?","What is haplodiploidy?"],a:0,exp:"A Y-linked region is eliminated during PDE, converting XX/XY germline to XX/XO soma."},
+500:{q:"Nematode chromosomes are holocentric, meaning centromeres are distributed this way.",c:["What is along the entire length?","What is at one end?","What is at the middle only?","What is absent entirely?"],a:0,exp:"Holocentric chromosomes have diffuse centromeres, making breakage more tolerable since fragments retain kinetochore function."}},
+"Germline vs Soma":{
+100:{q:"PDE removes DNA from somatic cells while preserving the complete genome in this lineage.",c:["What is the germline?","What is the soma?","What is the neural crest?","What is the mesoderm?"],a:0,exp:"The germline retains the full genome; somatic cells get the reduced version."},
+200:{q:"In Ascaris, PDE initiates at this early embryonic stage.",c:["What is the 2-cell stage?","What is the 4-cell stage?","What is the 8-cell stage?","What is gastrulation?"],a:1,exp:"PDE begins at the 4-cell stage in Ascaris, occurring in all 5 pre-somatic cells through the 16-cell stage."},
+300:{q:"In Mesorhabditis nematodes, PDE occurs at this embryonic cell division.",c:["What is the 1st division?","What is the 2nd division?","What is the 3rd division?","What is the 5th division?"],a:2,exp:"Mesorhabditis undergoes PDE at the 3rd embryonic division in all 5 presomatic blastomeres."},
+400:{q:"During PDE, this histone H3 variant is absent from eliminated DNA, preventing its segregation.",c:["What is CENP-A?","What is H3K9me3?","What is H3K4me3?","What is H2A.Z?"],a:0,exp:"CENP-A marks centromeres; its absence from eliminated DNA means no microtubules attach, so the DNA is lost."},
+500:{q:"ChIP-seq shows CENP-A is evenly distributed in the germline but undergoes this process before PDE.",c:["What is dynamic reorganization?","What is complete removal?","What is duplication?","What is acetylation?"],a:0,exp:"Centromere reorganization selectively deposits CENP-A on retained DNA, excluding eliminated sequences."}},
+"Model Organisms":{
+100:{q:"This famous model nematode does NOT undergo PDE.",c:["What is Ascaris?","What is C. elegans?","What is Parascaris?","What is Oscheius tipulae?"],a:1,exp:"C. elegans does not undergo PDE, though Stevens et al. (2025) showed PDE was in the Caenorhabditis ancestor."},
+200:{q:"Oscheius tipulae eliminates approximately this percentage of its genome — much less than Ascaris.",c:["What is ~0.6%?","What is ~10%?","What is ~25%?","What is ~50%?"],a:0,exp:"O. tipulae eliminates only the tips of chromosomes, about 0.6% of the genome."},
+300:{q:"Mesorhabditis nematodes are exciting for PDE research because they are amenable to both RNAi and this.",c:["What is CRISPR-Cas9?","What is transgenesis only?","What is chemical mutagenesis?","What is Southern blotting?"],a:0,exp:"Mesorhabditis can be manipulated with both RNAi and CRISPR, enabling functional studies of PDE."},
+400:{q:"Auanema rhodensis eliminates over this percentage of its genome — one of the most extreme cases.",c:["What is ~20%?","What is ~40%?","What is ~60%?","What is ~80%?"],a:2,exp:"Auanema rhodensis eliminates over 60% of its genome, an extreme example among nematodes."},
+500:{q:"Toxocara canis, the dog roundworm, eliminates 49-bp satellite sequences totaling approximately this percentage.",c:["What is ~2%?","What is ~9%?","What is ~25%?","What is ~50%?"],a:1,exp:"T. canis eliminates about 9% of its genome, composed of 49-bp repeat units."}},
+"PDE Mechanisms":{
+100:{q:"DNA breaks during PDE occur at specific sites called these.",c:["What are CBRs?","What are fragile sites?","What are hot spots?","What are splice sites?"],a:0,exp:"Chromosomal Breakage Regions are the defined sites where programmed breaks occur."},
+200:{q:"After PDE breaks, this enzyme adds TTAGGC repeats to heal the new chromosome ends in Ascaris.",c:["What is DNA polymerase?","What is telomerase?","What is ligase?","What is helicase?"],a:1,exp:"Telomerase adds species-specific telomeric repeats to stabilize broken ends."},
+300:{q:"Ascaris introduces approximately this many double-strand breaks during PDE across all pre-somatic cells.",c:["What is ~10?","What is ~36?","What is ~72?","What is ~200?"],a:2,exp:"72 programmed DSBs fragment the 24 germline chromosomes into 36 somatic chromosomes."},
+400:{q:"Hi-C data shows CBRs form spatial interactions before PDE, suggesting a mechanism independent of this.",c:["What is specific DNA sequence recognition?","What is transcription?","What is DNA replication?","What is histone modification?"],a:0,exp:"CBR spatial clustering independent of sequence homology suggests structure-based, not sequence-based, breakage."},
+500:{q:"In Oscheius tipulae, eliminated regions at chromosome tips are delineated by this type of element.",c:["What is a sequence motif?","What is a centromere?","What is a transposon?","What is a microsatellite?"],a:0,exp:"A specific sequence motif marks the boundary between retained and eliminated DNA in O. tipulae."}},
+"Songbirds & the GRC":{
+100:{q:"Songbirds possess this extra chromosome that is present in germ cells but eliminated from somatic cells.",c:["What is the germline-restricted chromosome (GRC)?","What is a B chromosome?","What is the W chromosome?","What is a supernumerary autosome?"],a:0,exp:"The GRC is present in all songbirds (Oscines) and eliminated from somatic cells during early development."},
+200:{q:"The GRC was first discovered in 1998 in this commonly studied songbird.",c:["What is the zebra finch?","What is the chicken?","What is the canary?","What is the crow?"],a:0,exp:"Pigozzi and Solari discovered the GRC in Taeniopygia guttata."},
+300:{q:"The zebra finch GRC is the largest chromosome in the species, comprising over this percentage of the genome.",c:["What is 1%?","What is 5%?","What is 10%?","What is 25%?"],a:2,exp:"The GRC is >150 Mb, likely over 10% of the zebra finch genome."},
+400:{q:"The GRC contains over 115 genes paralogous to autosomal genes, enriched for genes involved in this process.",c:["What is female gonad development?","What is neural crest migration?","What is immune function?","What is feather pigmentation?"],a:0,exp:"GRC genes are enriched for female gonad development, expressed in both testes and ovaries."},
+500:{q:"This one gene has a complete coding region on the GRC across all studied songbird species, making it a candidate for GRC indispensability.",c:["What is cpeb1?","What is bicc1?","What is trim71?","What is dph6?"],a:0,exp:"cpeb1 shows no copy number variation and has an intact ORF across species — likely essential for the GRC's persistence."}},
+"Nematode Diversity":{
+100:{q:"PDE has been found in nematodes from at least this many distinct phylogenetic clades.",c:["What is 2?","What is 3?","What is 5?","What is 7?"],a:1,exp:"PDE is found in Clade III (ascarids), Clade IV (Strongyloides), and Clade V (Oscheius, Mesorhabditis, Caenorhabditis, Auanema)."},
+200:{q:"Parascaris is a parasitic nematode that infects this animal.",c:["What is horse?","What is dog?","What is pig?","What is human?"],a:0,exp:"Parascaris species are equine ascarids, commonly infecting foals."},
+300:{q:"Ascaris suum infects pigs, while this closely related species infects humans.",c:["What is Ascaris lumbricoides?","What is Toxocara canis?","What is Enterobius?","What is Trichuris?"],a:0,exp:"A. lumbricoides is the human roundworm, closely related to the pig parasite A. suum."},
+400:{q:"Mesorhabditis belari and M. spiculigera belong to the same nematode family as C. elegans, called this.",c:["What is Rhabditidae?","What is Ascarididae?","What is Strongyloididae?","What is Onchocercidae?"],a:0,exp:"Rhabditidae includes C. elegans, Oscheius, Mesorhabditis, and Caenorhabditis — all Clade V nematodes."},
+500:{q:"Baylisascaris schroederi, the giant panda roundworm, was shown to share PDE features with Ascaris and Parascaris in comparative studies of this.",c:["What is karyotype and synteny?","What is gene expression?","What is proteomics?","What is epigenomics?"],a:0,exp:"Comparative genomics of Ascaris, Parascaris, and Baylisascaris revealed conserved synteny and PDE features."}},
+"PDE by the Numbers":{
+100:{q:"Ascaris eliminates approximately this percentage of its germline genome.",c:["What is ~5%?","What is ~18%?","What is ~50%?","What is ~90%?"],a:1,exp:"About 18% of the Ascaris germline genome is lost during PDE."},
+200:{q:"Parascaris univalens eliminates approximately this extreme percentage of its genome.",c:["What is ~25%?","What is ~50%?","What is ~70%?","What is ~85-90%?"],a:3,exp:"P. univalens eliminates 85-90% of its germline genome — mostly repetitive satellite DNA."},
+300:{q:"The eliminated satellite repeat unit in Ascaris is this many base pairs long.",c:["What is 5 bp?","What is 49 bp?","What is 121 bp?","What is 500 bp?"],a:2,exp:"Ascaris eliminates 121-bp tandem satellite repeats, while Parascaris has 5-bp and 10-bp repeats."},
+400:{q:"PDE in Ascaris occurs across this many pre-somatic cells from the 4- to 16-cell stage.",c:["What is 1?","What is 3?","What is 5?","What is 8?"],a:2,exp:"All 5 pre-somatic blastomeres undergo PDE during these early divisions."},
+500:{q:"Songbirds make up approximately this fraction of all bird species, making the GRC the most widespread vertebrate PDE.",c:["What is ~10%?","What is ~25%?","What is ~50%?","What is ~75%?"],a:2,exp:"Songbirds (suborder Oscines) comprise about half of all ~10,500 bird species."}},
+"Repeats & Satellites":{
+100:{q:"The majority of eliminated DNA in most nematodes consists of this type of sequence.",c:["What are tandem/satellite repeats?","What are single-copy genes?","What are tRNAs?","What are enhancers?"],a:0,exp:"Satellite repeats make up the bulk of eliminated material in nematode PDE."},
+200:{q:"Each nematode genus eliminates a different satellite — Ascaris 121-bp, Parascaris 5/10-bp, and Toxocara this size.",c:["What is 49 bp?","What is 200 bp?","What is 12 bp?","What is 1 kb?"],a:0,exp:"Each genus has independently evolved its own repeat composition, suggesting different evolutionary origins."},
+300:{q:"In Parascaris, the two large heterochromatic chromosome arms are mainly composed of these and are eliminated during PDE.",c:["What are satellite repeats?","What are protein-coding genes?","What are rDNA arrays?","What are transposons?"],a:0,exp:"The massive HET arms of Parascaris are satellite-rich and entirely eliminated."},
+400:{q:"In Oscheius dolichura, eliminated regions contain divergent paralogs of conserved genes plus elements derived from these transposons.",c:["What are helitron-like elements?","What are LINEs?","What are SINEs?","What are Tc1/mariner?"],a:0,exp:"Helitron2-like transposable elements are linked to chromosome ends and variably eliminated regions."},
+500:{q:"In Auanema rhodensis, all autosomes share the same large tandem repeats in their eliminated regions, suggesting this about repeat evolution.",c:["What is concerted evolution/homogenization across chromosomes?","What is random insertion?","What is independent origin?","What is horizontal transfer?"],a:0,exp:"Shared repeats across all autosomes suggest concerted evolution or inter-chromosomal homogenization."}},
+"History of PDE":{
+100:{q:"PDE (chromatin diminution) was discovered in the 1880s by this German cell biologist.",c:["Who is Theodor Boveri?","Who is August Weismann?","Who is Walther Flemming?","Who is Thomas Hunt Morgan?"],a:0,exp:"Boveri observed chromatin diminution in Parascaris equorum embryos."},
+200:{q:"Boveri's PDE observations directly contributed to establishing this fundamental concept.",c:["What is the chromosome theory of inheritance?","What is the central dogma?","What is epigenetics?","What is Mendelian genetics?"],a:0,exp:"Boveri's work showed chromosomes carry hereditary material — a key step toward the chromosome theory."},
+300:{q:"PDE was long considered a curiosity of parasitic worms until its discovery in this free-living nematode in 2017.",c:["What is Oscheius tipulae?","What is C. elegans?","What is Pristionchus?","What is Mesorhabditis?"],a:0,exp:"O. tipulae was the first free-living nematode found to undergo PDE, expanding the field beyond parasites."},
+400:{q:"The Wang lab at the University of Tennessee has pioneered modern molecular studies using these combined technologies.",c:["What are Hi-C and long-read sequencing?","What are microarrays and qPCR?","What are Western blots and 2D gels?","What are flow cytometry and FACS?"],a:0,exp:"Combining Hi-C chromatin conformation data with PacBio/ONT assemblies has revolutionized PDE genomics."},
+500:{q:"In 2023, Delattre and colleagues made headlines by discovering PDE in this genus of free-living nematodes.",c:["What is Mesorhabditis?","What is Pristionchus?","What is Panagrellus?","What is Diploscapter?"],a:0,exp:"The Delattre lab discovered massive PDE in Mesorhabditis belari and M. spiculigera, opening functional approaches."}},
+"Caenorhabditis Surprise":{
+100:{q:"Stevens et al. (2025) discovered PDE in this many early-diverging Caenorhabditis species.",c:["What is 1?","What is 3?","What is 5?","What is 10?"],a:1,exp:"Three early-diverging Caenorhabditis species were found to undergo PDE."},
+200:{q:"This finding implies PDE was present in the last common ancestor of all Caenorhabditis and was subsequently this.",c:["What is lost in many species including C. elegans?","What is gained recently?","What is transferred horizontally?","What is duplicated?"],a:0,exp:"PDE in early-diverging species means the ancestor had it; C. elegans and many others lost it."},
+300:{q:"Some elimination sites in these Caenorhabditis species are orthologous across species, meaning they share this.",c:["What is a common evolutionary origin?","What is random chance?","What is convergent sequence?","What is horizontal transfer?"],a:0,exp:"Orthologous elimination sites suggest conserved PDE regions inherited from the common ancestor."},
+400:{q:"A small number of eliminated genes in these species have C. elegans orthologs with these types of functions.",c:["What are essential germline functions?","What are immune functions?","What are metabolic functions?","What are neural functions?"],a:0,exp:"Some eliminated genes have orthologs essential for the C. elegans germline."},
+500:{q:"Stevens used long-read sequencing plus this chromosome-capture technology to reconstruct germline and somatic genomes.",c:["What is Hi-C?","What is ATAC-seq?","What is ChIP-seq?","What is RNA-seq?"],a:0,exp:"Hi-C scaffolding combined with long reads enabled chromosome-level germline and somatic assemblies."}},
+"PDE Across Life":{
+100:{q:"In ciliates like Tetrahymena, PDE occurs during development of this nuclear structure.",c:["What is the macronucleus?","What is the micronucleus?","What is the nucleolus?","What is the nuclear pore?"],a:0,exp:"Ciliates generate the somatic macronucleus from the germline micronucleus, eliminating IESs in the process."},
+200:{q:"Lampreys eliminate approximately 20% of their germline genome from somatic cells — they are classified as this type of fish.",c:["What are jawless fish (agnathans)?","What are bony fish?","What are cartilaginous fish?","What are lobe-finned fish?"],a:0,exp:"Lampreys and hagfish are jawless vertebrates that both undergo PDE."},
+300:{q:"PDE has been found in copepods, bandicoots, ratfishes, and even these organisms with programmed DNA elimination in plants.",c:["What are some plant species?","What are fungi?","What are archaea?","What are bacteria?"],a:0,exp:"PDE or PDE-like processes have been described in a surprisingly wide range of eukaryotes including plants."},
+400:{q:"In Strongyloides nematodes, PDE is divergent — it occurs during this process and functions in sex determination.",c:["What is mitotic oocyte division?","What is early embryogenesis?","What is spermatogenesis?","What is larval development?"],a:0,exp:"Unlike ascarid PDE in embryos, Strongyloides PDE occurs in oocytes and determines sex."},
+500:{q:"The songbird GRC may have originated as this type of selfish genetic element that became stabilized.",c:["What is a B chromosome?","What is a plasmid?","What is a retrotransposon?","What is an endosymbiont genome?"],a:0,exp:"The GRC may be a B chromosome that evolved stable germline inheritance and somatic elimination."}}
+},
+round2:{
+"Hi-C & 3D Genome":{
+200:{q:"Hi-C captures 3D chromatin contacts through crosslinking, restriction digestion, and this key step.",c:["What is proximity ligation?","What is Southern blotting?","What is gel electrophoresis?","What is PCR amplification?"],a:0,exp:"Proximity ligation joins crosslinked DNA fragments, capturing spatial relationships."},
+400:{q:"ICE normalization in Hi-C corrects biases from GC content, mappability, and this.",c:["What is restriction fragment length?","What is gene density?","What is repeat content?","What is chromatin state?"],a:0,exp:"ICE iteratively corrects for fragment length, GC, and mappability biases."},
+600:{q:"A/B compartments from Hi-C eigenvector analysis correspond to active (A) and this (B) chromatin.",c:["What is inactive/closed?","What is highly repetitive?","What is centromeric?","What is newly replicated?"],a:0,exp:"B compartments are transcriptionally inactive with closed chromatin."},
+800:{q:"TAD boundaries are identified by local minima in this Hi-C-derived metric.",c:["What is the insulation score?","What is the directionality index?","What is contact probability?","What is the eigenvector?"],a:0,exp:"Insulation score minima mark boundaries where contact frequency drops between adjacent domains."},
+1000:{q:"Saddle plots reveal that compartment interactions are stronger in Ascaris somatic cells compared to germline, suggesting PDE affects this.",c:["What is genome compartmentalization/3D organization?","What is gene expression only?","What is DNA replication?","What is recombination?"],a:0,exp:"PDE alters the 3D organization of the genome, strengthening compartment segregation in somatic cells."}},
+"CBRs & Breaks":{
+200:{q:"CBR stands for this.",c:["What is Chromosomal Breakage Region?","What is Chromatin Binding Region?","What is Condensed Bridge Region?","What is Centromeric Break Region?"],a:0,exp:"Chromosomal Breakage Regions are the defined sites of programmed DNA breaks."},
+400:{q:"In Ascaris, there are approximately this many CBRs generating internal chromosome breaks.",c:["What is ~10?","What is ~25?","What is ~44?","What is ~100?"],a:2,exp:"About 44 CBRs produce internal breaks, plus all chromosome ends are remodeled."},
+600:{q:"CBR trans-interactions across different chromosomes suggest they cluster in this before PDE.",c:["What is a shared nuclear compartment?","What is the nucleolus?","What is the nuclear pore?","What is the cytoplasm?"],a:0,exp:"CBRs may co-localize in a dedicated nuclear subcompartment prior to elimination."},
+800:{q:"Analysis of CBR chromatin before PDE shows increased accessibility, measured by this technique.",c:["What is ATAC-seq?","What is ChIP-seq?","What is RNA-seq?","What is bisulfite sequencing?"],a:0,exp:"ATAC-seq shows CBRs become more accessible before elimination, suggesting the chromatin opens for break machinery."},
+1000:{q:"The conservation of CBR spatial positioning between Ascaris and Parascaris despite sequence divergence suggests break sites are determined by this rather than sequence.",c:["What is 3D chromosome structure?","What is DNA sequence motifs?","What is transcription factor binding?","What is DNA methylation?"],a:0,exp:"Structure-based recognition rather than sequence-specific recognition determines break sites."}},
+"Comparative Genomics":{
+200:{q:"Ascaris and Parascaris diverged approximately this many million years ago.",c:["What is ~10 MYA?","What is ~30 MYA?","What is ~50 MYA?","What is ~100 MYA?"],a:2,exp:"~50 million years of divergence with remarkably conserved PDE outcomes."},
+400:{q:"Despite different karyotypes, Ascaris and Parascaris somatic genomes show conserved A/B compartments identified by this analysis.",c:["What is eigenvector/PCA of Hi-C?","What is gene expression profiling?","What is repeat masking?","What is phylogenetic analysis?"],a:0,exp:"Eigenvector decomposition of Hi-C matrices reveals conserved compartment patterns."},
+600:{q:"Nigon elements are ancestral linkage groups used to track chromosome evolution in this nematode suborder.",c:["What is Rhabditina?","What is Spirurina?","What is Tylenchina?","What is Dorylaimia?"],a:0,exp:"Nigon elements define the ancestral chromosome units rearranged across Rhabditina nematode evolution."},
+800:{q:"The O. tipulae T2T genome assembly was the first gap-free genome of a non-Caenorhabditis nematode, which led to this unexpected discovery.",c:["What is PDE (via alternative telomeric ends)?","What is whole-genome duplication?","What is horizontal gene transfer?","What is gene loss?"],a:0,exp:"Alternative terminal telomere sequences at chromosome ends revealed that O. tipulae undergoes PDE."},
+1000:{q:"Convergent production of 36 somatic chromosomes from germline karyotypes of 24 (Ascaris) and 1 (Parascaris) is evidence for this.",c:["What is constrained convergent evolution?","What is random drift?","What is neutral evolution?","What is gene flow?"],a:0,exp:"Strong functional constraint drives independent lineages to the same karyotypic outcome."}},
+"Epigenetic Marks":{
+200:{q:"This active histone mark is depleted from eliminated regions in Ascaris.",c:["What is H3K4me3?","What is H3K9me3?","What is H3K27me3?","What is H4K20me3?"],a:0,exp:"H3K4me3 marks active promoters and is absent from the heterochromatic eliminated regions."},
+400:{q:"Eliminated regions are enriched for this repressive heterochromatin mark.",c:["What is H3K9me3?","What is H3K4me3?","What is H3K36me3?","What is H3K4me1?"],a:0,exp:"H3K9me3 is the hallmark of constitutive heterochromatin on eliminated sequences."},
+600:{q:"In songbird spermatocytes, the GRC univalent is marked with repressive H3K9me3 and this other repressive mark.",c:["What is H3K27me3?","What is H3K4me1?","What is H3K36me3?","What is H3K79me2?"],a:0,exp:"Both H3K9me3 and H3K27me3 are present on the GRC in male meiosis, along with absence of RNA Pol II."},
+800:{q:"In ciliates, PDE is guided by small RNA-directed heterochromatinization — the small RNAs implicated in nematode PDE are these.",c:["What are piRNAs?","What are miRNAs?","What are siRNAs?","What are tRNAs?"],a:0,exp:"piRNAs and the Piwi pathway may mark sequences for elimination in nematodes, similar to ciliate scnRNAs."},
+1000:{q:"Multi-omics integration of Hi-C, ChIP-seq, ATAC-seq, and RNA-seq across developmental stages reveals that compartment strength changes this way after PDE.",c:["What is compartments become stronger/more defined?","What is compartments weaken?","What is compartments disappear?","What is no change?"],a:0,exp:"Post-PDE somatic cells show stronger A/B compartmentalization than germline cells."}},
+"Evolution of PDE":{
+200:{q:"PDE has evolved independently at least this many times across the tree of life.",c:["What is 2-3?","What is 5-6?","What is 8-10+?","What is once?"],a:2,exp:"PDE evolved independently in ciliates, multiple nematode clades, arthropods, lampreys, hagfish, songbirds, and others."},
+400:{q:"One major hypothesis for PDE's function is permanent somatic silencing of these genomic parasites.",c:["What are transposable elements?","What are viruses?","What are bacteria?","What are prions?"],a:0,exp:"Physically removing transposons and repeats is the ultimate form of silencing."},
+600:{q:"The Delattre lab has proposed this as a driving force behind PDE in Mesorhabditis nematodes.",c:["What is a transposon-driven process?","What is immune selection?","What is dietary adaptation?","What is UV resistance?"],a:0,exp:"Delattre's group is investigating whether transposon dynamics drive the evolution and mechanism of PDE."},
+800:{q:"The fact that different nematode genera eliminate different satellite repeats (121-bp, 49-bp, 5-bp) suggests repeat composition reflects this.",c:["What are independent origins and species-specific evolution?","What is a shared ancestor?","What is horizontal transfer?","What is contamination?"],a:0,exp:"Each genus evolved its own repeat landscape independently after the PDE mechanism was established."},
+1000:{q:"Stevens et al. showed PDE in the Caenorhabditis ancestor was lost in C. elegans — this challenges the assumption that PDE is restricted to these types of nematodes.",c:["What are parasitic nematodes?","What are marine nematodes?","What are plant-parasitic nematodes?","What are soil nematodes?"],a:0,exp:"PDE was long thought to be linked to parasitism; its presence in Caenorhabditis ancestors disproves this."}},
+"Karyotype Evolution":{
+200:{q:"Chromosome fission and fusion are common in nematodes because their chromosomes are this type.",c:["What is holocentric?","What is monocentric?","What is acentric?","What is telocentric?"],a:0,exp:"Holocentric chromosomes tolerate breakage since centromere function is distributed along the length."},
+400:{q:"Simmons et al. showed that PDE in Parascaris effectively reverses ancestral chromosome fusions by splitting germline chromosomes back into this.",c:["What is the ancestral karyotype?","What is random fragments?","What is a single chromosome?","What is a duplicated genome?"],a:0,exp:"PDE at fusion sites restores the pre-fusion karyotype in somatic cells."},
+600:{q:"Comparison of Ascaris, Parascaris, and Baylisascaris synteny reveals that their germline karyotypes arose from fusions of approximately this many ancestral chromosomes.",c:["What is ~24?","What is ~36?","What is ~48?","What is ~12?"],a:1,exp:"About 36 ancestral chromosomal units fused into the various germline karyotypes seen today."},
+800:{q:"In Parascaris, the single germline chromosome's two heterochromatic arms are composed of satellite DNA and are entirely eliminated, reducing genome size by this mechanism.",c:["What is heterochromatin elimination?","What is gene conversion?","What is unequal crossing over?","What is transposition?"],a:0,exp:"The massive HET arms are heterochromatic satellite DNA that is completely removed during PDE."},
+1000:{q:"The convergence of Ascaris (24 germline) and Parascaris (1 germline) on 36 somatic chromosomes suggests the somatic karyotype is under this type of constraint.",c:["What is strong purifying/functional selection?","What is neutral drift?","What is sexual selection?","What is balancing selection?"],a:0,exp:"The somatic karyotype is functionally constrained despite dramatic germline karyotype evolution."}},
+"Cell Biology of PDE":{
+200:{q:"Eliminated DNA in Ascaris is deposited into the cytoplasm as a compact mass during this cell cycle phase.",c:["What is mitosis?","What is S phase?","What is G1?","What is G2?"],a:0,exp:"During the mitotic divisions of PDE, eliminated DNA is excluded from daughter nuclei and degraded in the cytoplasm."},
+400:{q:"The selective retention of DNA during PDE depends on this epigenetic centromere marker being present on kept sequences.",c:["What is CENP-A?","What is H3K9me3?","What is HP1?","What is cohesin?"],a:0,exp:"Only DNA with CENP-A-marked centromeres gets attached to spindle microtubules and segregated into daughter nuclei."},
+600:{q:"In songbird spermatocytes, the GRC forms a distinct heterochromatic domain and is eliminated as this structure after meiosis.",c:["What is a micronucleus?","What is an apoptotic body?","What is a polar body?","What is a residual body?"],a:0,exp:"The GRC is expelled as a micronucleus in young spermatids."},
+800:{q:"The GRC in female songbird meiosis behaves differently than in males — it forms this structure and undergoes recombination.",c:["What is a bivalent?","What is a univalent?","What is a tetrad?","What is a synaptonemal complex only?"],a:0,exp:"In oocytes the GRC pairs as a bivalent with 2-3 recombination foci; in spermatocytes it's a silenced univalent."},
+1000:{q:"The dynamic reorganization of CENP-A from uniform germline distribution to selective somatic deposition represents a novel mechanism for this cellular process.",c:["What is programmed chromosome segregation/selective inheritance?","What is DNA repair?","What is transcription?","What is chromatin remodeling?"],a:0,exp:"Selective CENP-A redeposition is a unique mechanism enabling differential chromosome segregation during PDE."}},
+"Beyond Nematodes":{
+200:{q:"In ciliates, the germline genome is stored in this small nucleus.",c:["What is the micronucleus?","What is the macronucleus?","What is the nucleolus?","What is the mitochondrion?"],a:0,exp:"The micronucleus is the germline nucleus; the macronucleus is the somatic workhorse."},
+400:{q:"Ciliate PDE removes thousands of these short elements scattered throughout the germline genome.",c:["What are IESs (internal eliminated sequences)?","What are introns?","What are exons?","What are promoters?"],a:0,exp:"IESs are removed from the developing macronucleus, and the remaining segments are stitched together."},
+600:{q:"The songbird GRC likely occurs across all songbirds, which diverged from other birds approximately this many MYA.",c:["What is ~47 MYA?","What is ~100 MYA?","What is ~20 MYA?","What is ~200 MYA?"],a:0,exp:"Songbirds diverged ~47 MYA, making the GRC potentially present in the largest vertebrate group with PDE."},
+800:{q:"In lampreys, PDE was discovered by comparing germline (from sperm/testes) and somatic genomes using this approach.",c:["What is comparative genome sequencing?","What is karyotyping only?","What is protein analysis?","What is behavioral studies?"],a:0,exp:"Sequencing revealed ~20% more DNA in germline versus somatic tissues."},
+1000:{q:"PDE in bandicoots (marsupials) involves elimination of sex chromosomes from somatic cells — both X and Y in some tissues — which is unique because it affects this.",c:["What is sex chromosome complement in somatic cells?","What is autosome number?","What is mitochondrial DNA?","What is imprinting?"],a:0,exp:"Bandicoots can eliminate sex chromosomes from somatic tissues, a unique mammalian example of PDE."}},
+"Sex & Elimination":{
+200:{q:"In Strongyloides, PDE functions directly in this biological process, unlike ascarid PDE.",c:["What is sex determination?","What is immune evasion?","What is development?","What is aging?"],a:0,exp:"Strongyloides uses PDE during oocyte division to determine offspring sex."},
+400:{q:"Parascaris PDE eliminates a region that converts XX/XY germline sex determination to this system in somatic cells.",c:["What is XX/XO?","What is ZW/ZZ?","What is haplodiploidy?","What is environmental?"],a:0,exp:"The Y-linked region is eliminated, leaving somatic cells with an XX/XO system."},
+600:{q:"The songbird GRC is predominantly inherited through this parent, showing non-Mendelian transmission.",c:["What is the mother (maternal)?","What is the father (paternal)?","What is both equally?","What is random?"],a:0,exp:"The GRC shows maternal inheritance — transmitted through oocytes, expelled during spermatogenesis."},
+800:{q:"In Strongyloides, PDE occurs during this specific cell division — very different from early embryonic PDE in Ascaris.",c:["What is mitotic oocyte division?","What is meiosis I?","What is the first embryonic cleavage?","What is spermatogenesis?"],a:0,exp:"Strongyloides PDE happens during oocyte mitotic divisions, well before embryogenesis."},
+1000:{q:"The GRC's enrichment for female gonad development genes combined with its somatic elimination suggests it may reduce this type of evolutionary conflict.",c:["What is sexual/intralocus conflict (antagonistic pleiotropy)?","What is genetic drift?","What is mutation load?","What is inbreeding depression?"],a:0,exp:"Genes beneficial in the germline but harmful in the soma can be maintained on the GRC and eliminated from somatic cells."}},
+"Techniques & Tools":{
+200:{q:"This chromosome conformation capture method generates genome-wide contact maps at megabase resolution.",c:["What is Hi-C?","What is ChIP-seq?","What is ATAC-seq?","What is FISH?"],a:0,exp:"Hi-C provides an unbiased genome-wide map of 3D chromatin interactions."},
+400:{q:"CPM normalization of Hi-C data stands for this.",c:["What is counts per million?","What is contacts per megabase?","What is crosslinks per molecule?","What is copies per matrix?"],a:0,exp:"Counts per million normalizes for sequencing depth differences between samples."},
+600:{q:"Long-read technologies from these two companies have been essential for assembling repetitive eliminated regions.",c:["What are PacBio and Oxford Nanopore?","What are Illumina and BGI?","What are 10x Genomics and Dovetail?","What are Ion Torrent and SOLiD?"],a:0,exp:"PacBio HiFi and ONT ultralong reads span satellite arrays that short reads cannot resolve."},
+800:{q:"The Crane et al. (2015) insulation score method uses a square sliding window on Hi-C matrices to identify these genomic features.",c:["What are TAD boundaries?","What are enhancers?","What are origins of replication?","What are centromeres?"],a:0,exp:"Local minima in insulation scores mark boundaries between topologically associating domains."},
+1000:{q:"FISH combined with immunostaining for histone marks can simultaneously visualize eliminated DNA and its chromatin state — this combination was key for understanding this in Ascaris.",c:["What is CENP-A reorganization during PDE?","What is DNA methylation?","What is RNA splicing?","What is protein folding?"],a:0,exp:"Combined FISH/immunostaining revealed the dynamic loss of centromere marks from eliminated DNA."}}
+},
+final:[
+{cat:"The Ultimate PDE Question",q:"Boveri's observation that only specific cells lose chromatin while others retain it led directly to this foundational concept in biology.",c:["What is the chromosome theory of inheritance?","What is the central dogma?","What is epigenetics?","What is cell fate determination?"],a:0,exp:"Boveri's chromatin diminution work was central to establishing that chromosomes carry hereditary information."},
+{cat:"Genome Architecture",q:"Conserved A/B compartment patterns between Ascaris and Parascaris despite ~50MY divergence and different karyotypes most strongly suggests this about 3D genome organization.",c:["What is that compartmentalization is functionally constrained?","What is that compartments are random?","What is that chromosome number determines compartments?","What is that compartments drift neutrally?"],a:0,exp:"Conservation despite divergence indicates strong functional constraint."},
+{cat:"Cutting Edge PDE",q:"If CBRs interact in 3D space independently of DNA sequence, the most likely macromolecular component mediating these interactions is this.",c:["What are proteins/protein complexes?","What is RNA?","What is lipid membrane?","What is DNA sequence homology?"],a:0,exp:"Protein-mediated interactions bring genomic loci together independent of sequence."},
+{cat:"PDE Across Life",q:"Independent PDE evolution from ciliates to vertebrates achieving similar functional outcomes — silencing repeats, resolving genetic conflict — is best explained by this.",c:["What is convergent evolution driven by common selective pressures?","What is shared ancestry?","What is horizontal gene transfer?","What is random mutation?"],a:0,exp:"Common functional pressures independently drove the evolution of PDE across the tree of life."},
+{cat:"The Caenorhabditis Question",q:"The discovery of PDE in early-diverging Caenorhabditis species means that the world's most famous model nematode, C. elegans, actually lost this process during evolution — overturning decades of assumption about this.",c:["What is the link between PDE and parasitism?","What is nematode phylogeny?","What is genome size evolution?","What is sex determination?"],a:0,exp:"PDE in the Caenorhabditis ancestor proves it is not inherently linked to a parasitic lifestyle."},
+{cat:"The Songbird Question",q:"The GRC's rapid gene turnover, frequent pseudogenization, and dramatic inter-species differences — yet obligatory presence in all songbirds — presents this evolutionary paradox.",c:["What is an apparently dispensable chromosome that is actually indispensable?","What is a selfish element that benefits the host?","What is a neutral element under drift?","What is a horizontal transfer?"],a:0,exp:"Despite appearing mostly non-functional, the GRC persists universally — likely because a small core set of genes (like cpeb1) is essential."},
+{cat:"Karyotype Paradox",q:"Parascaris has 1 germline chromosome; Ascaris has 24; Baylisascaris has a different number — yet PDE produces similar somatic karyotypes. This demonstrates that PDE is best understood not just as elimination, but as this.",c:["What is a karyotype sculpting mechanism?","What is random fragmentation?","What is a repair process?","What is chromosome condensation?"],a:0,exp:"PDE doesn't just remove DNA — it actively shapes the somatic karyotype from diverse germline architectures."},
+{cat:"Future of PDE",q:"The convergence of CRISPR-tractable organisms (Oscheius, Mesorhabditis), Hi-C technology, and comparative genomics across 100+ PDE species positions the field to finally answer this long-standing question.",c:["What is the molecular mechanism of PDE?","What is the age of the Earth?","What is the origin of life?","What is the meaning of consciousness?"],a:0,exp:"Functional tools in model organisms + genomics across species should finally reveal how PDE works mechanistically."}
+]};
 
 // === STATE ===
-let players=[],curPlayer=0,round=1,answered={round1:new Set(),round2:new Set()},dd={round1:new Set(),round2:new Set()};
-let wager=0,picked=-1,curQ=null,timer=null,timeLeft=30,lastCorrectPlayer=0;
-let buzzTimer=null,buzzActive=false,readingTimer=null;
-const TSEC=30,BUZZ_KEYS=['q','w','e'];
+let players=[],curP=0,round=1,ans={r1:new Set(),r2:new Set()},ddSet={r1:new Set(),r2:new Set()};
+let wager=0,picked=-1,curQ=null,tmr=null,tLeft=30,lastOk=0;
+let bTmr=null,bOn=false,rTmr=null;
+const TSEC=30,BK=['q','w','e'];
+// Selected categories for current game
+let selCats={r1:[],r2:[]};
 
 // === SETUP ===
 let cc=0;
-function pickCount(n){cc=n;document.querySelectorAll('.player-btns .btn').forEach(b=>b.classList.remove('selected'));document.getElementById('pc'+n).classList.add('selected');const a=document.getElementById('nameArea');a.innerHTML='';for(let i=0;i<n;i++)a.innerHTML+=`<input class="name-input" id="pn${i}" placeholder="Player ${i+1}" maxlength="20">`;document.getElementById('goBtn').style.display='inline-block';sfxSelect()}
-function startGame(){players=[];for(let i=0;i<cc;i++){const v=document.getElementById('pn'+i).value.trim();players.push({name:v||'Player '+(i+1),score:0})}curPlayer=0;lastCorrectPlayer=0;round=1;answered={round1:new Set(),round2:new Set()};placeDD();document.getElementById('setupCard').style.display='none';document.getElementById('scoreboard').style.display='flex';document.getElementById('roundBar').style.display='flex';document.getElementById('board').style.display='grid';updateScore();buildBoard();sfxSelect()}
-function placeDD(){dd={round1:new Set(),round2:new Set()};addDD('round1',1);addDD('round2',2)}
-function addDD(rk,n){const cats=Object.keys(Q[rk]);let p=0;while(p<n){const c=cats[Math.floor(Math.random()*cats.length)],vs=Object.keys(Q[rk][c]),v=vs[Math.floor(Math.random()*vs.length)],k=c+'|'+v;if(!dd[rk].has(k)){dd[rk].add(k);p++}}}
-function updateScore(){document.getElementById('scoreboard').innerHTML=players.map((p,i)=>`<div class="score-card ${i===curPlayer?'active':''}"><div class="score-name">${p.name}</div><div class="score-val">$${p.score.toLocaleString()}</div></div>`).join('')}
-function buildBoard(){const rk=round===1?'round1':'round2',cats=Object.keys(Q[rk]),vals=Object.keys(Q[rk][cats[0]]).map(Number).sort((a,b)=>a-b),board=document.getElementById('board');board.style.gridTemplateColumns=`repeat(${cats.length},1fr)`;if(round===1){document.getElementById('roundLabel').innerHTML='<span>JeoPDE!</span> — Round 1';document.getElementById('skipBtn').textContent='Skip to Round 2 ▸';document.getElementById('skipBtn').onclick=()=>skipRound()}else{document.getElementById('roundLabel').innerHTML='<span>Double JeoPDE!</span> — Round 2';document.getElementById('skipBtn').textContent='Skip to Final ▸';document.getElementById('skipBtn').onclick=()=>goFinal()}let h='';cats.forEach(c=>{h+=`<div class="cat-head">${c}</div>`});vals.forEach(v=>{cats.forEach(c=>{const k=c+'|'+v,done=answered[rk].has(k);h+=`<div class="cell ${done?'done':''}" onclick="${done?'':`openQ('${rk}','${c}',${v})`}"><span class="cell-val">$${v}</span></div>`})});board.innerHTML=h}
-function skipRound(){if(round===1)showSplash('Double JeoPDE!','Values are doubled!',()=>{round=2;buildBoard()})}
-function goFinal(){startFinal()}
-function showSplash(t,s,cb){const el=document.getElementById('splash');el.innerHTML=`<h1>🧬 ${t} 🧬</h1><p>${s}</p>`;el.style.display='flex';sfxReveal();setTimeout(()=>{el.style.display='none';cb()},2200)}
+function pickCount(n){cc=n;document.querySelectorAll('.pb .bn').forEach(b=>b.classList.remove('sl'));document.getElementById('pc'+n).classList.add('sl');const a=document.getElementById('nameArea');a.innerHTML='';for(let i=0;i<n;i++)a.innerHTML+=`<input class="ni" id="pn${i}" placeholder="Player ${i+1}" maxlength="20">`;document.getElementById('goBtn').style.display='inline-block';sfxSel()}
 
-// =============================================================================
-// QUESTION FLOW
-// Single player: cell → clue + choices + 30s timer
-// Multiplayer:   cell → clue → 5s reading → 10s buzz window → answer + 30s timer
-//                if nobody buzzes → no points, continue
-// Daily Double:  goes to curPlayer (board control), wager, then answer
-// =============================================================================
-function openQ(rk,cat,val){
-    const k=cat+'|'+val;if(answered[rk].has(k))return;
-    const qd=Q[rk][cat][val],isDD=dd[rk].has(k);
-    curQ={rk,cat,val,qd,isDD,key:k};picked=-1;wager=val;sfxSelect();resetModal();
-    document.getElementById('mValue').textContent='$'+val;
-    document.getElementById('mQuestion').textContent=qd.q;
-    if(isDD){
-        document.getElementById('ddBadge').style.display='inline-block';sfxDD();
-        document.getElementById('wagerArea').style.display='block';
-        const mx=Math.max(players[curPlayer].score,val);
-        document.getElementById('wagerField').max=mx;document.getElementById('wagerField').value=val;
-        document.getElementById('wagerHint').textContent=`${players[curPlayer].name} — max: $${mx.toLocaleString()}`;
-    } else if(players.length>1){
-        startBuzzPhase();
-    } else {
-        wager=val;renderC();
-    }
-    document.getElementById('qOverlay').style.display='block';
+function startGame(){
+    players=[];for(let i=0;i<cc;i++){const v=document.getElementById('pn'+i).value.trim();players.push({name:v||'Player '+(i+1),score:0})}
+    curP=0;lastOk=0;round=1;ans={r1:new Set(),r2:new Set()};
+    // Randomly select 5 categories per round from pool
+    const r1cats=Object.keys(Q.round1),r2cats=Object.keys(Q.round2);
+    selCats.r1=shuffle(r1cats).slice(0,5);
+    selCats.r2=shuffle(r2cats).slice(0,5);
+    placeDD();
+    document.getElementById('setup').style.display='none';
+    document.getElementById('scoreboard').style.display='flex';
+    document.getElementById('roundBar').style.display='flex';
+    document.getElementById('board').style.display='grid';
+    updSc();buildBoard();sfxSel();
 }
-function resetModal(){stopTimer();stopBuzz();document.getElementById('timerStrip').classList.remove('active');document.getElementById('ddBadge').style.display='none';document.getElementById('buzzArea').style.display='none';document.getElementById('wagerArea').style.display='none';document.getElementById('mChoices').innerHTML='';document.getElementById('lockBtn').style.display='none';document.getElementById('fbBox').style.display='none';document.getElementById('expBox').style.display='none';document.getElementById('contBtn').style.display='none';document.getElementById('buzzMiss').style.display='none'}
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b}
+function placeDD(){ddSet={r1:new Set(),r2:new Set()};addDD('r1',1);addDD('r2',2)}
+function addDD(rk,n){const cats=rk==='r1'?selCats.r1:selCats.r2;const src=rk==='r1'?Q.round1:Q.round2;let p=0;while(p<n){const c=cats[Math.floor(Math.random()*cats.length)];const vs=Object.keys(src[c]);const v=vs[Math.floor(Math.random()*vs.length)];const k=c+'|'+v;if(!ddSet[rk].has(k)){ddSet[rk].add(k);p++}}}
+function updSc(){document.getElementById('scoreboard').innerHTML=players.map((p,i)=>`<div class="sp ${i===curP?'ac':''}"><div class="sn">${p.name}</div><div class="sv">$${p.score.toLocaleString()}</div></div>`).join('')}
 
-// === BUZZ-IN: 5s reading → 10s buzz window ===
-function startBuzzPhase(){
-    const area=document.getElementById('buzzArea');
-    const status=document.getElementById('buzzStatus');
-    const countdown=document.getElementById('buzzCountdown');
-    const btnsEl=document.getElementById('buzzBtns');
-    document.getElementById('buzzMiss').style.display='none';
-    buzzActive=false;
+function buildBoard(){
+    const rk=round===1?'r1':'r2';
+    const cats=rk==='r1'?selCats.r1:selCats.r2;
+    const src=round===1?Q.round1:Q.round2;
+    const vals=Object.keys(src[cats[0]]).map(Number).sort((a,b)=>a-b);
+    const board=document.getElementById('board');
+    board.style.gridTemplateColumns=`repeat(${cats.length},1fr)`;
+    if(round===1){document.getElementById('roundLabel').innerHTML='<span>JeoPDE!</span> — Round 1';document.getElementById('skipBtn').textContent='Skip to Round 2 ▸';document.getElementById('skipBtn').onclick=()=>skipR()}
+    else{document.getElementById('roundLabel').innerHTML='<span>Double JeoPDE!</span> — Round 2';document.getElementById('skipBtn').textContent='Skip to Final ▸';document.getElementById('skipBtn').onclick=()=>goFin()}
+    let h='';
+    cats.forEach(c=>{h+=`<div class="ch">${c}</div>`});
+    vals.forEach(v=>{cats.forEach(c=>{const k=c+'|'+v,done=ans[rk].has(k);h+=`<div class="cl ${done?'dn':''}" onclick="${done?'':`openQ('${c}',${v})`}"><span class="cv">$${v}</span></div>`})});
+    board.innerHTML=h;
+}
+function skipR(){if(round===1)showSpl('Double JeoPDE!','Values are doubled!',()=>{round=2;buildBoard()})}
+function goFin(){startFin()}
+function showSpl(t,s,cb){const el=document.getElementById('splash');el.innerHTML=`<h1>🧬 ${t} 🧬</h1><p>${s}</p>`;el.style.display='flex';sfxRv();setTimeout(()=>{el.style.display='none';cb()},2200)}
 
-    // Render buttons (disabled during reading)
-    btnsEl.innerHTML=players.map((p,i)=>
-        `<button class="buzz-btn" id="bz${i}" onclick="buzzIn(${i})">${p.name}<span class="buzz-key">Key: ${BUZZ_KEYS[i].toUpperCase()}</span></button>`
-    ).join('');
+// === QUESTION FLOW ===
+function openQ(cat,val){
+    const rk=round===1?'r1':'r2';const src=round===1?Q.round1:Q.round2;
+    const k=cat+'|'+val;if(ans[rk].has(k))return;
+    const qd=src[cat][val],isDD=ddSet[rk].has(k);
+    curQ={rk,cat,val,qd,isDD,key:k};picked=-1;wager=val;sfxSel();resetMd();
+    document.getElementById('mVal').textContent='$'+val;
+    document.getElementById('mQ').textContent=qd.q;
+    if(isDD){document.getElementById('ddBdg').style.display='inline-block';sfxDD();document.getElementById('wagA').style.display='block';const mx=Math.max(players[curP].score,val);document.getElementById('wagF').max=mx;document.getElementById('wagF').value=val;document.getElementById('wagH').textContent=`${players[curP].name} — max: $${mx.toLocaleString()}`}
+    else if(players.length>1){startBuzz()}
+    else{wager=val;rndrC()}
+    document.getElementById('qOv').style.display='block';
+}
+function resetMd(){stopTmr();stopBz();document.getElementById('tStrip').classList.remove('on');document.getElementById('ddBdg').style.display='none';document.getElementById('buzzA').style.display='none';document.getElementById('wagA').style.display='none';document.getElementById('mCs').innerHTML='';document.getElementById('lockBtn').style.display='none';document.getElementById('fbBox').style.display='none';document.getElementById('exBox').style.display='none';document.getElementById('contBtn').style.display='none';document.getElementById('buzzM').style.display='none'}
+
+// === BUZZ-IN ===
+function startBuzz(){
+    bOn=false;const area=document.getElementById('buzzA');document.getElementById('buzzM').style.display='none';
+    document.getElementById('buzzBs').innerHTML=players.map((p,i)=>`<button class="bbtn" id="bz${i}" onclick="bzIn(${i})">${p.name}<span class="bk">Key: ${BK[i].toUpperCase()}</span></button>`).join('');
     area.style.display='block';
-
-    // Phase 1: Reading (5 seconds)
-    status.textContent='📖 Read the clue...';
-    let readSec=5;
-    countdown.textContent=readSec;
-    sfxReading();
-    readingTimer=setInterval(()=>{
-        readSec--;
-        countdown.textContent=readSec;
-        if(readSec<=0){
-            clearInterval(readingTimer);readingTimer=null;
-            startBuzzWindow();
-        }
-    },1000);
+    document.getElementById('buzzSt').textContent='📖 Read the clue...';
+    let rs=5;document.getElementById('buzzCd').textContent=rs;
+    rTmr=setInterval(()=>{rs--;document.getElementById('buzzCd').textContent=rs;if(rs<=0){clearInterval(rTmr);rTmr=null;startBzWin()}},1000);
 }
-
-function startBuzzWindow(){
-    buzzActive=true;
-    const status=document.getElementById('buzzStatus');
-    const countdown=document.getElementById('buzzCountdown');
-    status.textContent='⚡ BUZZ IN! ⚡';
-
-    // Enable buttons
-    document.querySelectorAll('.buzz-btn').forEach(b=>b.classList.add('live'));
-
-    // 10 second window
-    let buzzSec=10;
-    countdown.textContent=buzzSec;
-    buzzTimer=setInterval(()=>{
-        buzzSec--;
-        countdown.textContent=buzzSec;
-        if(buzzSec<=3)sfxTick();
-        if(buzzSec<=0){
-            clearInterval(buzzTimer);buzzTimer=null;
-            buzzActive=false;
-            nobodyBuzzed();
-        }
-    },1000);
+function startBzWin(){
+    bOn=true;document.getElementById('buzzSt').textContent='⚡ BUZZ IN! ⚡';
+    document.querySelectorAll('.bbtn').forEach(b=>b.classList.add('lv'));
+    let bs=10;document.getElementById('buzzCd').textContent=bs;
+    bTmr=setInterval(()=>{bs--;document.getElementById('buzzCd').textContent=bs;if(bs<=3)sfxTk();if(bs<=0){clearInterval(bTmr);bTmr=null;bOn=false;noBuzz()}},1000);
 }
+function bzIn(i){if(!bOn)return;bOn=false;stopBz();sfxBz();curP=i;updSc();document.getElementById('buzzA').style.display='none';wager=curQ.val;rndrC()}
+function noBuzz(){document.querySelectorAll('.bbtn').forEach(b=>b.classList.remove('lv'));document.getElementById('buzzSt').textContent='⏱ Nobody buzzed in!';document.getElementById('buzzCd').textContent='';document.getElementById('buzzM').style.display='block';document.getElementById('buzzM').textContent='No points awarded.';sfxTo();ans[curQ.rk].add(curQ.key);setTimeout(()=>{document.getElementById('qOv').style.display='none';curP=(curP+1)%players.length;updSc();buildBoard();chkEnd()},2000)}
+function stopBz(){if(bTmr){clearInterval(bTmr);bTmr=null}if(rTmr){clearInterval(rTmr);rTmr=null}bOn=false}
+document.addEventListener('keydown',e=>{if(!bOn)return;const i=BK.indexOf(e.key.toLowerCase());if(i>=0&&i<players.length)bzIn(i)});
 
-function buzzIn(idx){
-    if(!buzzActive)return;
-    buzzActive=false;stopBuzz();sfxBuzz();
-    curPlayer=idx;updateScore();
-    document.getElementById('buzzArea').style.display='none';
-    wager=curQ.val;renderC();
-}
+function lockWager(){const mx=Math.max(players[curP].score,curQ.val);let w=parseInt(document.getElementById('wagF').value)||0;wager=Math.max(0,Math.min(w,mx));document.getElementById('wagA').style.display='none';sfxSel();rndrC()}
+function rndrC(){const{qd}=curQ;document.getElementById('mCs').innerHTML=qd.c.map((c,i)=>`<button class="cc" id="ch${i}" onclick="pk(${i})">${c}</button>`).join('');document.getElementById('lockBtn').style.display='inline-block';startTmr()}
+function pk(i){document.querySelectorAll('#mCs .cc').forEach(b=>b.classList.remove('pk'));document.getElementById('ch'+i).classList.add('pk');picked=i;sfxSel()}
 
-function nobodyBuzzed(){
-    document.querySelectorAll('.buzz-btn').forEach(b=>b.classList.remove('live'));
-    document.getElementById('buzzStatus').textContent='⏱ Nobody buzzed in!';
-    document.getElementById('buzzCountdown').textContent='';
-    document.getElementById('buzzMiss').style.display='block';
-    document.getElementById('buzzMiss').textContent='No points awarded. Moving on...';
-    sfxTimeout();
-    // Mark answered, no score change
-    answered[curQ.rk].add(curQ.key);
-    setTimeout(()=>{
-        document.getElementById('qOverlay').style.display='none';
-        curPlayer=(curPlayer+1)%players.length;updateScore();buildBoard();checkRoundEnd();
-    },2000);
-}
+// === TIMER ===
+function startTmr(){tLeft=TSEC;const s=document.getElementById('tStrip'),f=document.getElementById('tFill'),l=document.getElementById('tLbl');s.classList.add('on');f.style.width='100%';f.classList.remove('dg');l.textContent=tLeft;tmr=setInterval(()=>{tLeft--;l.textContent=tLeft;f.style.width=(tLeft/TSEC*100)+'%';if(tLeft<=8)f.classList.add('dg');if(tLeft<=5)sfxTk();if(tLeft<=0){clearInterval(tmr);tmr=null;picked=-1;lockAnswer(true)}},1000)}
+function stopTmr(){if(tmr){clearInterval(tmr);tmr=null}}
 
-function stopBuzz(){if(buzzTimer){clearInterval(buzzTimer);buzzTimer=null}if(readingTimer){clearInterval(readingTimer);readingTimer=null}buzzActive=false}
-
-// Keyboard buzz-in (Q, W, E)
-document.addEventListener('keydown',e=>{
-    if(!buzzActive)return;
-    const idx=BUZZ_KEYS.indexOf(e.key.toLowerCase());
-    if(idx>=0&&idx<players.length)buzzIn(idx);
-});
-
-function lockWager(){const mx=Math.max(players[curPlayer].score,curQ.val);let w=parseInt(document.getElementById('wagerField').value)||0;wager=Math.max(0,Math.min(w,mx));document.getElementById('wagerArea').style.display='none';sfxSelect();renderC()}
-function renderC(){const{qd}=curQ;document.getElementById('mChoices').innerHTML=qd.c.map((c,i)=>`<button class="choice" id="ch${i}" onclick="pick(${i})">${c}</button>`).join('');document.getElementById('lockBtn').style.display='inline-block';startTimer()}
-function pick(i){document.querySelectorAll('#mChoices .choice').forEach(b=>b.classList.remove('picked'));document.getElementById('ch'+i).classList.add('picked');picked=i;sfxSelect()}
-function startTimer(){timeLeft=TSEC;const strip=document.getElementById('timerStrip'),fill=document.getElementById('timerFill'),label=document.getElementById('timerLabel');strip.classList.add('active');fill.style.width='100%';fill.classList.remove('danger');label.textContent=timeLeft;timer=setInterval(()=>{timeLeft--;label.textContent=timeLeft;fill.style.width=(timeLeft/TSEC*100)+'%';if(timeLeft<=8)fill.classList.add('danger');if(timeLeft<=5)sfxTick();if(timeLeft<=0){clearInterval(timer);timer=null;picked=-1;lockAnswer(true)}},1000)}
-function stopTimer(){if(timer){clearInterval(timer);timer=null}}
-function lockAnswer(to=false){stopTimer();document.getElementById('timerStrip').classList.remove('active');const{qd,key,rk}=curQ,ok=picked===qd.a;answered[rk].add(key);document.querySelectorAll('#mChoices .choice').forEach((b,i)=>{b.disabled=true;b.onclick=null;if(i===qd.a)b.classList.add('right');if(i===picked&&!ok)b.classList.add('wrong-pick')});const fb=document.getElementById('fbBox');if(to){fb.className='feedback-box fb-time';fb.textContent=`⏱ Time's up! −$${wager.toLocaleString()}`;players[curPlayer].score-=wager;sfxTimeout()}else if(ok){fb.className='feedback-box fb-correct';fb.textContent=`✅ Correct! +$${wager.toLocaleString()}`;players[curPlayer].score+=wager;lastCorrectPlayer=curPlayer;sfxCorrect()}else{fb.className='feedback-box fb-wrong';fb.textContent=`❌ Incorrect! −$${wager.toLocaleString()}`;players[curPlayer].score-=wager;sfxWrong()}fb.style.display='block';document.getElementById('expBox').textContent=qd.exp;document.getElementById('expBox').style.display='block';document.getElementById('lockBtn').style.display='none';document.getElementById('contBtn').style.display='inline-block';updateScore()}
-function closeQ(){document.getElementById('qOverlay').style.display='none';const{qd}=curQ;if(players.length>1){if(picked===qd.a)curPlayer=lastCorrectPlayer;else curPlayer=(curPlayer+1)%players.length;updateScore()}buildBoard();checkRoundEnd()}
-function checkRoundEnd(){const rk=round===1?'round1':'round2',total=Object.keys(Q[rk]).reduce((s,c)=>s+Object.keys(Q[rk][c]).length,0);if(answered[rk].size>=total){if(round===1)showSplash('Double JeoPDE!','Values are doubled!',()=>{round=2;buildBoard()});else startFinal()}}
+function lockAnswer(to=false){stopTmr();document.getElementById('tStrip').classList.remove('on');const{qd,key,rk}=curQ,ok=picked===qd.a;ans[rk].add(key);document.querySelectorAll('#mCs .cc').forEach((b,i)=>{b.disabled=true;b.onclick=null;if(i===qd.a)b.classList.add('rt');if(i===picked&&!ok)b.classList.add('wp')});const fb=document.getElementById('fbBox');if(to){fb.className='fb ft';fb.textContent=`⏱ Time's up! −$${wager.toLocaleString()}`;players[curP].score-=wager;sfxTo()}else if(ok){fb.className='fb fc';fb.textContent=`✅ Correct! +$${wager.toLocaleString()}`;players[curP].score+=wager;lastOk=curP;sfxOk()}else{fb.className='fb fw';fb.textContent=`❌ Incorrect! −$${wager.toLocaleString()}`;players[curP].score-=wager;sfxNo()}fb.style.display='block';document.getElementById('exBox').textContent=qd.exp;document.getElementById('exBox').style.display='block';document.getElementById('lockBtn').style.display='none';document.getElementById('contBtn').style.display='inline-block';updSc()}
+function closeQ(){document.getElementById('qOv').style.display='none';if(players.length>1){if(picked===curQ.qd.a)curP=lastOk;else curP=(curP+1)%players.length;updSc()}buildBoard();chkEnd()}
+function chkEnd(){const rk=round===1?'r1':'r2';const cats=rk==='r1'?selCats.r1:selCats.r2;const src=round===1?Q.round1:Q.round2;const total=cats.reduce((s,c)=>s+Object.keys(src[c]).length,0);if(ans[rk].size>=total){if(round===1)showSpl('Double JeoPDE!','Values are doubled!',()=>{round=2;buildBoard()});else startFin()}}
 
 // === FINAL ===
-function startFinal(){document.getElementById('board').style.display='none';document.getElementById('roundBar').style.display='none';const fq=Q.final[Math.floor(Math.random()*Q.final.length)];curQ={qd:fq};document.getElementById('finalCat').textContent=fq.cat;sfxReveal();document.getElementById('fWagerInputs').innerHTML=players.map((p,i)=>{const mx=Math.max(p.score,0);return`<div style="margin:.8rem 0"><label style="font-family:'Oswald',sans-serif;font-size:1rem">${p.name} ($${p.score.toLocaleString()}) — Max: $${mx.toLocaleString()}</label><br><input type="number" class="wager-field" id="fw${i}" min="0" max="${mx}" value="0" style="margin-top:.4rem;font-size:1.4rem;width:150px"></div>`}).join('');document.getElementById('fWagerSec').style.display='block';document.getElementById('fQuestionSec').style.display='none';document.getElementById('fResultSec').style.display='none';document.getElementById('finalOverlay').style.display='block'}
-function revealFinal(){players.forEach((p,i)=>{const mx=Math.max(p.score,0);let w=parseInt(document.getElementById('fw'+i).value)||0;p.fw=Math.max(0,Math.min(w,mx))});const fq=curQ.qd;document.getElementById('fqText').textContent=fq.q;document.getElementById('fChoicesArea').innerHTML=players.map((p,i)=>`<div style="margin:1rem 0;padding:.8rem;background:rgba(0,0,0,.2);border-radius:8px"><p style="font-family:'Oswald',sans-serif;margin-bottom:.5rem">${p.name} (Wager: $${p.fw.toLocaleString()})</p><div class="choices">${fq.c.map((c,ci)=>`<button class="choice" id="fc${i}_${ci}" onclick="pickF(${i},${ci})">${c}</button>`).join('')}</div></div>`).join('');document.getElementById('fWagerSec').style.display='none';document.getElementById('fQuestionSec').style.display='block';sfxSelect()}
-function pickF(pi,ci){document.querySelectorAll(`[id^="fc${pi}_"]`).forEach(b=>b.classList.remove('picked'));document.getElementById(`fc${pi}_${ci}`).classList.add('picked');players[pi].fa=ci;sfxSelect()}
-function submitFinal(){const fq=curQ.qd;players.forEach(p=>{if(p.fa===fq.a)p.score+=(p.fw||0);else p.score-=(p.fw||0)});document.getElementById('fScores').innerHTML=players.map(p=>`<div style="font-family:'Oswald',sans-serif;font-size:1.3rem;margin:.5rem 0">${p.name}: $${p.score.toLocaleString()} ${p.fa===fq.a?'✅':'❌'}</div>`).join('');document.getElementById('fExp').textContent=fq.exp;const w=players.reduce((b,p)=>p.score>b.score?p:b,players[0]);document.getElementById('winnerText').textContent=`🏆 ${w.name} wins with $${w.score.toLocaleString()}! 🏆`;players.forEach(p=>saveScore(p.name,p.score));document.getElementById('fQuestionSec').style.display='none';document.getElementById('fResultSec').style.display='block';updateScore();sfxWin()}
+function startFin(){document.getElementById('board').style.display='none';document.getElementById('roundBar').style.display='none';const fq=Q.final[Math.floor(Math.random()*Q.final.length)];curQ={qd:fq};document.getElementById('finCat').textContent=fq.cat;sfxRv();document.getElementById('fWIn').innerHTML=players.map((p,i)=>{const mx=Math.max(p.score,0);return`<div style="margin:.8rem 0"><label style="font-family:'Oswald',sans-serif;font-size:1rem">${p.name} ($${p.score.toLocaleString()}) — Max: $${mx.toLocaleString()}</label><br><input type="number" class="wf" id="fw${i}" min="0" max="${mx}" value="0" style="margin-top:.4rem;font-size:1.4rem;width:150px"></div>`}).join('');document.getElementById('fWSec').style.display='block';document.getElementById('fQSec').style.display='none';document.getElementById('fRSec').style.display='none';document.getElementById('finOv').style.display='block'}
+function revealFinal(){players.forEach((p,i)=>{const mx=Math.max(p.score,0);let w=parseInt(document.getElementById('fw'+i).value)||0;p.fw=Math.max(0,Math.min(w,mx))});const fq=curQ.qd;document.getElementById('fqTxt').textContent=fq.q;document.getElementById('fCArea').innerHTML=players.map((p,i)=>`<div style="margin:1rem 0;padding:.8rem;background:rgba(0,0,0,.2);border-radius:8px"><p style="font-family:'Oswald',sans-serif;margin-bottom:.5rem">${p.name} (Wager: $${p.fw.toLocaleString()})</p><div class="cs">${fq.c.map((c,ci)=>`<button class="cc" id="fc${i}_${ci}" onclick="pkF(${i},${ci})">${c}</button>`).join('')}</div></div>`).join('');document.getElementById('fWSec').style.display='none';document.getElementById('fQSec').style.display='block';sfxSel()}
+function pkF(pi,ci){document.querySelectorAll(`[id^="fc${pi}_"]`).forEach(b=>b.classList.remove('pk'));document.getElementById(`fc${pi}_${ci}`).classList.add('pk');players[pi].fa=ci;sfxSel()}
+function submitFinal(){const fq=curQ.qd;players.forEach(p=>{if(p.fa===fq.a)p.score+=(p.fw||0);else p.score-=(p.fw||0)});document.getElementById('fScr').innerHTML=players.map(p=>`<div style="font-family:'Oswald',sans-serif;font-size:1.3rem;margin:.5rem 0">${p.name}: $${p.score.toLocaleString()} ${p.fa===fq.a?'✅':'❌'}</div>`).join('');document.getElementById('fEx').textContent=fq.exp;const w=players.reduce((b,p)=>p.score>b.score?p:b,players[0]);document.getElementById('winTxt').textContent=`🏆 ${w.name} wins with $${w.score.toLocaleString()}! 🏆`;players.forEach(p=>saveScr(p.name,p.score));document.getElementById('fQSec').style.display='none';document.getElementById('fRSec').style.display='block';updSc();sfxWn()}
 </script>
 </body>
 </html>
