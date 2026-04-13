@@ -10,7 +10,6 @@ Perfect for lab meetings, journal clubs, teaching, and conference booths.
 
 **Online via GitHub Pages:** `https://jsimmo45.github.io/JeoPDE/`
 
-Generate a QR code at [qrcode.tec-it.com](https://qrcode.tec-it.com/en) (free, no watermark).
 
 ## Features
 
