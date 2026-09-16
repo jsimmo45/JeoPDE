@@ -10,32 +10,41 @@ Perfect for lab meetings, journal clubs, teaching, and conference booths.
 
 **Online via GitHub Pages:** `https://jsimmo45.github.io/JeoPDE/`
 
-
 ## Features
 
-- **120+ questions** across 24 categories — 5 randomly selected per round each game, so every playthrough is different
-- **TV-show flow**: clue appears → 5s reading period → 10s buzz-in window (tap or press Q/W/E) → 30s answer timer. If nobody buzzes, question is skipped
-- Random Daily Doubles (1 in Round 1, 2 in Round 2)
-- 1–3 players; correct answerer keeps board control
-- Skip buttons (Round 2, Final)
-- Explanations after every answer
-- Single-player friendly
-- **Shared leaderboard** via Firebase (localStorage fallback)
-- **Admin controls** — password-protected score management
-- Synthesized sound effects with mute button
-- Mobile-friendly with horizontal scroll on portrait
+- **268 clues across 48 categories** — 5 categories drawn per round, so no two games match
+- **Four difficulty tiers**: Intro (outreach and undergrads), Standard, Journal club, and **Roscoff 2026** — a tier built from the Jacques Monod conference speakers' own papers, with every explanation citing its source
+- **Three ways to answer**: multiple choice, typed free response (fuzzy matched), or host mode — clue on screen, teams answer aloud, host rules
+- **TV-show flow**: clue appears → reading period → buzz-in window (tap or press Q/W/E) → answer timer
+- **Rebound** — if the player who buzzes misses, the clue opens to everyone else
+- No deduction on a timeout; money is only lost on a wrong lock-in
+- **Undo** the last ruling, or flip any ruling with "count it as correct"
+- Random Daily Doubles (1 in Round 1, 2 in Round 2) with True Double wagering
+- **Final JeoPDE!** played one player at a time — private wagers and answers, pass-the-laptop handoffs
+- **Projector mode** — scales the interface up, hides chrome, goes fullscreen
+- **Session memory** — categories and Finals already played are skipped until the pool runs low
+- **Resume after refresh** — an interrupted game is offered back with scores intact
+- Answer choices shuffle every draw; explanations after every clue
+- **Shared leaderboard** via Firebase (localStorage fallback) with password-protected admin controls
+- Synthesized sound effects with mute; keyboard play throughout
 
 ## Question Topics
 
-**Round 1 pool** (12 categories, 5 randomly chosen):
-Elimin-8 or Not · Chromosomal Shenanigans · Germline vs Soma · Model Organisms · PDE Mechanisms · Songbirds & the GRC · Nematode Diversity · PDE by the Numbers · Repeats & Satellites · History of PDE · Caenorhabditis Surprise · PDE Across Life
+**Standard pool** — the original 22 categories plus 6 new ones:
 
-**Round 2 pool** (10 categories, 5 randomly chosen):
-Hi-C & 3D Genome · CBRs & Breaks · Comparative Genomics · Epigenetic Marks · Evolution of PDE · Karyotype Evolution · Cell Biology of PDE · Beyond Nematodes · Sex & Elimination · Techniques & Tools
+*Round 1:* Elimin-8 or Not · Chromosomal Shenanigans · Germline vs Soma · Model Organisms · PDE Mechanisms · Songbirds &amp; the GRC · Nematode Diversity · PDE by the Numbers · Repeats &amp; Satellites · History of PDE · Caenorhabditis Surprise · PDE Across Life · Telomeres, Healed · Why Eliminate? · Parasites &amp; Hosts
 
-**Final JeoPDE!:** 8 questions randomly selected
+*Round 2:* Hi-C &amp; 3D Genome · CBRs &amp; Breaks · Comparative Genomics · Epigenetic Marks · Evolution of PDE · Karyotype Evolution · Cell Biology of PDE · Beyond Nematodes · Sex &amp; Elimination · Techniques &amp; Tools · Small RNAs &amp; Argonautes · Genome Assembly · Two Ways to Eliminate
 
-Covers: *Ascaris*, *Parascaris*, *Oscheius tipulae*, *Mesorhabditis*, *Auanema rhodensis*, *Caenorhabditis* (Stevens et al. 2025), *Baylisascaris*, *Toxocara*, *Strongyloides*, songbird GRC, lampreys, hagfish, ciliates, bandicoots, and more.
+**Intro tier:** DNA Basics · Meet the Worms · Throwing DNA Away · Birds With a Secret · How Scientists Look · Big Numbers, Tiny Worms
+
+**Journal club tier:** Primary Literature · Methods in Detail · Hard Numbers · Mechanism, Molecular · Comparative, Hard Mode · Open Questions
+
+**Roscoff 2026 tier:** Ciliate Machinery · Chromosomes That Leave · Whose Genome Goes? · Nematode PDE · Ciliates, Harder · Birds &amp; Fish · Selfish Elements · Mechanism &amp; Models
+
+**Final JeoPDE!:** 16 clues, one drawn per game
+
+Covers: *Ascaris*, *Parascaris*, *Toxocara*, *Baylisascaris*, *Strongyloides*, *Oscheius tipulae*, *Mesorhabditis*, *Auanema rhodense*, *Caenorhabditis*, *Paramecium*, *Tetrahymena*, *Euplotes*, *Chilodonella*, sciarid fungus gnats, mealybugs, *Drosophila* B chromosomes, *Aegilops* and sorghum, *Cobitis* and *Hexagrammos* fish, lampreys, hagfish, songbird GRCs, the African pygmy mouse, and more.
 
 ## Adding Questions
 
@@ -50,7 +59,7 @@ Find the `Q` object in `index.html`. Each question:
 },
 ```
 
-Add new categories freely — the game randomly picks 5 per round, so more categories = more variety.
+The correct answer's index is `a`, and choices are shuffled at runtime, so `a: 0` is fine for every clue. Add new categories freely — the game picks 5 per round, so more categories means more variety.
 
 ## Firebase Setup (Shared Leaderboard)
 
